@@ -1,20 +1,21 @@
 export type Forecast = 'growth' | 'decline' | 'stagnation';
+export type Direction = 'bullish' | 'bearish' | 'neutral' | 'mixed' | 'volatile';
 export type Sentiment = 'positive' | 'negative' | 'neutral';
 export type MarketState = 'bullish' | 'bearish' | 'stagnation';
 export type Relevance = 'high' | 'medium' | 'low';
 export type EventType = 'earnings' | 'economic' | 'dividend' | 'conference';
 
-export interface CompanyGrowth {
+export interface CompanyPrediction {
   ticker: string;
-  forecast: Forecast;
-  change: number;
+  direction: Direction;
 }
 
 export interface NewsItem {
-  id: string;
+  id: number;
   headline: string;
   publishedAt: string;
-  companies: CompanyGrowth[];
+  publishedAtExact: string;
+  companies: CompanyPrediction[];
   tags: string[];
   summary: string;
   sentiment: Sentiment;
@@ -24,6 +25,25 @@ export interface NewsItem {
 export interface NewsDetail extends NewsItem {
   fullText: string;
   analyticalExplanation: string;
+  predictions: PredictionDetail[];
+}
+
+export interface PredictionDetail {
+  scope: string;
+  direction: string;
+  timeHorizon: string;
+  confidence: number;
+  rationale: string;
+  targets: string[];
+  evidence: string[];
+}
+
+export interface NewsPage {
+  content: NewsItem[];
+  page: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
 }
 
 export interface SectorData {

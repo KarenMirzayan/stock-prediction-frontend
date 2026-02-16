@@ -10,13 +10,14 @@ export class MockDataService {
 
   readonly homeNews: NewsItem[] = [
     {
-      id: '1',
+      id: 1,
       headline: 'Federal Reserve Signals Potential Rate Cut in Q2 2026',
       publishedAt: '2 hours ago',
+      publishedAtExact: 'February 16, 2026 at 8:30 PM',
       companies: [
-        { ticker: 'JPM', forecast: 'growth', change: 3.2 },
-        { ticker: 'BAC', forecast: 'growth', change: 2.8 },
-        { ticker: 'GS', forecast: 'growth', change: 1.9 },
+        { ticker: 'JPM', direction: 'bullish' },
+        { ticker: 'BAC', direction: 'bullish' },
+        { ticker: 'GS', direction: 'bullish' },
       ],
       tags: ['Finance', 'Banking', 'United States'],
       summary: 'The Federal Reserve indicated a potential shift in monetary policy, suggesting rate cuts may come sooner than expected as inflation shows signs of cooling.',
@@ -24,13 +25,14 @@ export class MockDataService {
       sentimentScore: 45,
     },
     {
-      id: '2',
+      id: 2,
       headline: 'Tech Giants Report Strong Q4 Earnings Amid AI Boom',
       publishedAt: '4 hours ago',
+      publishedAtExact: 'February 16, 2026 at 6:30 PM',
       companies: [
-        { ticker: 'AAPL', forecast: 'growth', change: 5.1 },
-        { ticker: 'MSFT', forecast: 'growth', change: 4.3 },
-        { ticker: 'GOOGL', forecast: 'stagnation', change: 0.2 },
+        { ticker: 'AAPL', direction: 'bullish' },
+        { ticker: 'MSFT', direction: 'bullish' },
+        { ticker: 'GOOGL', direction: 'neutral' },
       ],
       tags: ['Technology', 'AI', 'United States'],
       summary: 'Major technology companies exceeded analyst expectations, driven by continued investment in artificial intelligence and cloud services.',
@@ -38,13 +40,14 @@ export class MockDataService {
       sentimentScore: 62,
     },
     {
-      id: '3',
+      id: 3,
       headline: 'Oil Prices Surge on OPEC+ Production Cuts',
       publishedAt: '6 hours ago',
+      publishedAtExact: 'February 16, 2026 at 4:30 PM',
       companies: [
-        { ticker: 'XOM', forecast: 'growth', change: 4.8 },
-        { ticker: 'CVX', forecast: 'growth', change: 3.5 },
-        { ticker: 'BP', forecast: 'stagnation', change: 0.1 },
+        { ticker: 'XOM', direction: 'bullish' },
+        { ticker: 'CVX', direction: 'bullish' },
+        { ticker: 'BP', direction: 'mixed' },
       ],
       tags: ['Energy', 'Oil & Gas', 'Global'],
       summary: 'Crude oil prices jumped 5% after OPEC+ announced deeper production cuts to support market stability amid global demand concerns.',
@@ -52,13 +55,14 @@ export class MockDataService {
       sentimentScore: 12,
     },
     {
-      id: '4',
+      id: 4,
       headline: 'Retail Sales Decline as Consumer Spending Weakens',
       publishedAt: '8 hours ago',
+      publishedAtExact: 'February 16, 2026 at 2:30 PM',
       companies: [
-        { ticker: 'WMT', forecast: 'decline', change: -2.1 },
-        { ticker: 'TGT', forecast: 'decline', change: -3.4 },
-        { ticker: 'AMZN', forecast: 'stagnation', change: -0.3 },
+        { ticker: 'WMT', direction: 'bearish' },
+        { ticker: 'TGT', direction: 'bearish' },
+        { ticker: 'AMZN', direction: 'volatile' },
       ],
       tags: ['Retail', 'Consumer Discretionary', 'United States'],
       summary: 'U.S. retail sales fell for the second consecutive month, raising concerns about consumer confidence and economic growth outlook.',
@@ -70,13 +74,14 @@ export class MockDataService {
   readonly allNews: NewsItem[] = [
     ...this.homeNews,
     {
-      id: '5',
+      id: 5,
       headline: 'Electric Vehicle Sales Hit Record High in January',
       publishedAt: '10 hours ago',
+      publishedAtExact: 'February 16, 2026 at 12:30 PM',
       companies: [
-        { ticker: 'TSLA', forecast: 'growth', change: 4.2 },
-        { ticker: 'RIVN', forecast: 'growth', change: 6.7 },
-        { ticker: 'F', forecast: 'stagnation', change: 0.4 },
+        { ticker: 'TSLA', direction: 'bullish' },
+        { ticker: 'RIVN', direction: 'bullish' },
+        { ticker: 'F', direction: 'neutral' },
       ],
       tags: ['Automotive', 'Technology', 'Global'],
       summary: 'Global EV sales reached a new monthly record, with Tesla maintaining market leadership while new entrants gain ground.',
@@ -84,13 +89,14 @@ export class MockDataService {
       sentimentScore: 38,
     },
     {
-      id: '6',
+      id: 6,
       headline: 'Pharmaceutical Merger Creates Healthcare Giant',
       publishedAt: '12 hours ago',
+      publishedAtExact: 'February 16, 2026 at 10:30 AM',
       companies: [
-        { ticker: 'PFE', forecast: 'stagnation', change: 0.3 },
-        { ticker: 'JNJ', forecast: 'growth', change: 1.2 },
-        { ticker: 'MRK', forecast: 'stagnation', change: -0.1 },
+        { ticker: 'PFE', direction: 'neutral' },
+        { ticker: 'JNJ', direction: 'bullish' },
+        { ticker: 'MRK', direction: 'mixed' },
       ],
       tags: ['Healthcare', 'Pharmaceuticals', 'United States'],
       summary: 'A major pharmaceutical merger has been announced, combining two industry leaders into one of the largest healthcare companies globally.',
@@ -100,13 +106,14 @@ export class MockDataService {
   ];
 
   readonly newsDetail: NewsDetail = {
-    id: '1',
+    id: 1,
     headline: 'Federal Reserve Signals Potential Rate Cut in Q2 2026',
-    publishedAt: 'February 4, 2026 at 2:30 PM EST',
+    publishedAt: '2 hours ago',
+    publishedAtExact: 'February 4, 2026 at 2:30 PM EST',
     companies: [
-      { ticker: 'JPM', forecast: 'growth', change: 3.2 },
-      { ticker: 'BAC', forecast: 'growth', change: 2.8 },
-      { ticker: 'GS', forecast: 'growth', change: 1.9 },
+      { ticker: 'JPM', direction: 'bullish' },
+      { ticker: 'BAC', direction: 'bullish' },
+      { ticker: 'GS', direction: 'bullish' },
     ],
     tags: ['Finance', 'Banking', 'United States'],
     summary: 'The Federal Reserve indicated a potential shift in monetary policy, suggesting rate cuts may come sooner than expected as inflation shows signs of cooling.',
@@ -124,17 +131,23 @@ Analysts note that the timing of potential rate cuts will depend heavily on cont
 
 The move is expected to have broad implications across multiple sectors, particularly for interest-rate-sensitive industries such as real estate, utilities, and consumer durables.`,
     analyticalExplanation: 'The Federal Reserve\'s shift toward a more dovish stance represents a significant inflection point for markets. Lower interest rates typically benefit financial institutions through increased lending activity, while also supporting equity valuations broadly. The banking sector stands to benefit from both improved loan demand and reduced funding costs, though net interest margins may face some compression.',
+    predictions: [
+      { scope: 'COMPANY', direction: 'BULLISH', timeHorizon: 'SHORT_TERM', confidence: 75, rationale: 'Rate cuts benefit lending activity.', targets: ['JPM'], evidence: ['Fed signaled rate cuts'] },
+      { scope: 'COMPANY', direction: 'BULLISH', timeHorizon: 'SHORT_TERM', confidence: 70, rationale: 'Lower rates reduce deposit costs.', targets: ['BAC'], evidence: ['Inflation cooling'] },
+      { scope: 'SECTOR', direction: 'BULLISH', timeHorizon: 'MID_TERM', confidence: 65, rationale: 'Broad financial sector uplift expected.', targets: ['FINANCE'], evidence: ['Dovish policy shift'] },
+    ],
   };
 
   readonly relatedNews: NewsItem[] = [
     {
-      id: '5',
+      id: 5,
       headline: 'Banking Sector Rallies on Rate Cut Expectations',
       publishedAt: '3 hours ago',
+      publishedAtExact: 'February 16, 2026 at 7:30 PM',
       companies: [
-        { ticker: 'JPM', forecast: 'growth', change: 2.5 },
-        { ticker: 'C', forecast: 'growth', change: 1.8 },
-        { ticker: 'WFC', forecast: 'stagnation', change: 0.3 },
+        { ticker: 'JPM', direction: 'bullish' },
+        { ticker: 'C', direction: 'bullish' },
+        { ticker: 'WFC', direction: 'neutral' },
       ],
       tags: ['Finance', 'Banking', 'United States'],
       summary: 'Major U.S. banks saw significant gains as investors bet on improved profitability from potential rate cuts.',
@@ -142,9 +155,10 @@ The move is expected to have broad implications across multiple sectors, particu
       sentimentScore: 52,
     },
     {
-      id: '6',
+      id: 6,
       headline: 'Treasury Yields Drop Following Fed Statement',
       publishedAt: '4 hours ago',
+      publishedAtExact: 'February 16, 2026 at 6:30 PM',
       companies: [],
       tags: ['Finance', 'Bonds', 'United States'],
       summary: 'U.S. Treasury yields fell sharply across the curve as markets priced in earlier-than-expected rate cuts.',
