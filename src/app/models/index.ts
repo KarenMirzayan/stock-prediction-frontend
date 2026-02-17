@@ -97,6 +97,17 @@ export interface QuizQuestion {
   explanation: string;
 }
 
+export interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  questions: QuizQuestion[];
+  completed: boolean;
+  score?: number;
+  totalQuestions: number;
+}
+
 export interface SimulationScenario {
   id: string;
   title: string;

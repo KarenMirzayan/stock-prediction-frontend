@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   NewsItem, NewsDetail, SectorData, EventItem, CalendarEvent,
-  HeatmapSector, GlossaryTerm, QuizQuestion, SimulationScenario,
+  HeatmapSector, GlossaryTerm, Quiz, SimulationScenario,
   SubscribedCompany, SubscribedSector, ForecastHistoryItem, ForecastStats
 } from '../models';
 
@@ -292,10 +292,61 @@ The move is expected to have broad implications across multiple sectors, particu
     { term: 'ETF', definition: 'Exchange-Traded Fund. A type of pooled investment security that operates much like a mutual fund but trades on stock exchanges like individual stocks.', category: 'Investment Vehicles' },
   ];
 
-  readonly quizQuestions: QuizQuestion[] = [
-    { id: '1', question: 'What typically indicates a bull market?', options: ['Prices falling 20% from recent highs', 'Rising or expected rising prices', 'High trading volume', 'Increased market volatility'], correctAnswer: 1, explanation: 'A bull market is characterized by rising prices or expectations of rising prices, typically associated with investor optimism and economic growth.' },
-    { id: '2', question: 'A company with a high P/E ratio generally indicates:', options: ['The company is undervalued', 'Investors expect higher future growth', 'The company is paying high dividends', 'The stock price is declining'], correctAnswer: 1, explanation: 'A high P/E ratio typically suggests that investors expect higher earnings growth in the future compared to companies with lower P/E ratios.' },
-    { id: '3', question: 'What is the primary purpose of short selling?', options: ['To profit from rising stock prices', 'To earn dividend income', 'To profit from declining stock prices', 'To reduce portfolio volatility'], correctAnswer: 2, explanation: "Short selling is a strategy used to profit from an expected decline in a stock's price by borrowing and selling shares, then buying them back at a lower price." },
+  readonly quizzes: Quiz[] = [
+    {
+      id: '1', title: 'Market Basics', description: 'Learn the fundamentals of stock markets, including bull and bear markets, trading volume, and market cycles.',
+      difficulty: 'Beginner', completed: true, score: 100, totalQuestions: 3,
+      questions: [
+        { id: '1', question: 'What typically indicates a bull market?', options: ['Prices falling 20% from recent highs', 'Rising or expected rising prices', 'High trading volume', 'Increased market volatility'], correctAnswer: 1, explanation: 'A bull market is characterized by rising prices or expectations of rising prices, typically associated with investor optimism and economic growth.' },
+        { id: '2', question: 'A company with a high P/E ratio generally indicates:', options: ['The company is undervalued', 'Investors expect higher future growth', 'The company is paying high dividends', 'The stock price is declining'], correctAnswer: 1, explanation: 'A high P/E ratio typically suggests that investors expect higher earnings growth in the future compared to companies with lower P/E ratios.' },
+        { id: '3', question: 'What is the primary purpose of short selling?', options: ['To profit from rising stock prices', 'To earn dividend income', 'To profit from declining stock prices', 'To reduce portfolio volatility'], correctAnswer: 2, explanation: "Short selling is a strategy used to profit from an expected decline in a stock's price by borrowing and selling shares, then buying them back at a lower price." },
+      ],
+    },
+    {
+      id: '2', title: 'Valuation Metrics', description: 'Understand key valuation metrics used to analyze stocks, including P/E ratio, market cap, and dividend yield.',
+      difficulty: 'Beginner', completed: true, score: 67, totalQuestions: 3,
+      questions: [
+        { id: '4', question: 'What does market capitalization represent?', options: ['Annual revenue of a company', 'Total value of outstanding shares', 'Net profit margin', 'Total debt of a company'], correctAnswer: 1, explanation: 'Market capitalization is calculated by multiplying the current share price by the total number of outstanding shares, representing the total market value of a company.' },
+        { id: '5', question: 'A low P/E ratio compared to industry peers may suggest:', options: ['The stock is overvalued', 'The stock is potentially undervalued', 'High growth expectations', 'The company will go bankrupt'], correctAnswer: 1, explanation: 'A low P/E ratio relative to peers can indicate a stock is undervalued, though it may also reflect lower growth expectations or underlying issues.' },
+        { id: '6', question: 'Dividend yield is calculated by dividing:', options: ['Earnings by share price', 'Annual dividend by share price', 'Share price by annual dividend', 'Revenue by number of shares'], correctAnswer: 1, explanation: 'Dividend yield is the annual dividend payment divided by the stock price, expressed as a percentage. It shows the return from dividends alone.' },
+      ],
+    },
+    {
+      id: '3', title: 'Trading Strategies', description: 'Explore different trading strategies including day trading, swing trading, and position trading approaches.',
+      difficulty: 'Intermediate', completed: false, totalQuestions: 3,
+      questions: [
+        { id: '7', question: 'What is a stop-loss order?', options: ['An order to buy at a specific price', 'An order to sell when price drops to a set level', 'A limit on daily trades', 'An order that expires at market close'], correctAnswer: 1, explanation: 'A stop-loss order automatically sells a security when it reaches a specified price, limiting potential losses on a position.' },
+        { id: '8', question: 'Dollar-cost averaging involves:', options: ['Investing a lump sum at once', 'Investing fixed amounts at regular intervals', 'Only buying when prices drop', 'Trading based on currency fluctuations'], correctAnswer: 1, explanation: 'Dollar-cost averaging means investing a fixed amount regularly regardless of price, which reduces the impact of volatility over time.' },
+        { id: '9', question: 'What distinguishes swing trading from day trading?', options: ['Swing trading uses more capital', 'Swing trading holds positions for days to weeks', 'Day trading is less risky', 'Swing trading only involves options'], correctAnswer: 1, explanation: 'Swing trading holds positions for several days to weeks, aiming to capture short-to-medium-term price movements, while day trading closes all positions within the same day.' },
+      ],
+    },
+    {
+      id: '4', title: 'Risk Management', description: 'Master essential risk management concepts including diversification, hedging, and portfolio allocation strategies.',
+      difficulty: 'Intermediate', completed: false, totalQuestions: 3,
+      questions: [
+        { id: '10', question: 'What is the primary benefit of portfolio diversification?', options: ['Guaranteeing profits', 'Eliminating all risk', 'Reducing unsystematic risk', 'Maximizing short-term returns'], correctAnswer: 2, explanation: 'Diversification reduces unsystematic (company-specific) risk by spreading investments across different assets, sectors, and geographies.' },
+        { id: '11', question: 'What does beta measure in investing?', options: ['A stock\'s dividend growth rate', 'A stock\'s volatility relative to the market', 'The total return of a portfolio', 'A company\'s debt-to-equity ratio'], correctAnswer: 1, explanation: 'Beta measures a stock\'s volatility relative to the overall market. A beta greater than 1 indicates higher volatility than the market.' },
+        { id: '12', question: 'What is a hedging strategy?', options: ['Buying only growth stocks', 'Taking an offsetting position to reduce risk', 'Selling all positions before earnings', 'Investing only in bonds'], correctAnswer: 1, explanation: 'Hedging involves taking an offsetting investment position to reduce the risk of adverse price movements in an existing position.' },
+      ],
+    },
+    {
+      id: '5', title: 'Technical Analysis', description: 'Dive into technical analysis tools like moving averages, RSI, support and resistance levels.',
+      difficulty: 'Advanced', completed: false, totalQuestions: 3,
+      questions: [
+        { id: '13', question: 'What does a "golden cross" pattern indicate?', options: ['A bearish reversal', 'A bullish signal when short-term MA crosses above long-term MA', 'High trading volume', 'A stock reaching its all-time high'], correctAnswer: 1, explanation: 'A golden cross occurs when a short-term moving average crosses above a long-term moving average, typically seen as a bullish signal.' },
+        { id: '14', question: 'An RSI value above 70 generally indicates:', options: ['The asset is oversold', 'The asset is overbought', 'Normal trading conditions', 'Low volatility'], correctAnswer: 1, explanation: 'An RSI (Relative Strength Index) above 70 suggests an asset may be overbought and could be due for a price correction or pullback.' },
+        { id: '15', question: 'What is a support level?', options: ['The highest price a stock has reached', 'A price level where buying pressure tends to prevent further decline', 'The average trading price', 'A government-mandated minimum price'], correctAnswer: 1, explanation: 'A support level is a price point where a stock tends to stop falling because buying interest increases, creating a floor for the price.' },
+      ],
+    },
+    {
+      id: '6', title: 'Global Markets', description: 'Understand how international markets interact, currency effects, and geopolitical factors influencing investments.',
+      difficulty: 'Advanced', completed: false, totalQuestions: 3,
+      questions: [
+        { id: '16', question: 'How does a strengthening US dollar typically affect US exporters?', options: ['Increases their competitiveness abroad', 'Makes their products more expensive overseas', 'Has no effect on exports', 'Reduces import costs only'], correctAnswer: 1, explanation: 'A stronger US dollar makes American goods more expensive for foreign buyers, potentially reducing demand for US exports and hurting exporter revenues.' },
+        { id: '17', question: 'What are emerging markets?', options: ['Markets that only trade technology stocks', 'Economies transitioning toward more advanced financial systems', 'Markets that operate only during certain hours', 'Stock exchanges less than 5 years old'], correctAnswer: 1, explanation: 'Emerging markets are economies in the process of rapid growth and industrialization, offering higher growth potential but also carrying more risk than developed markets.' },
+        { id: '18', question: 'What is geopolitical risk in investing?', options: ['Risk from natural disasters only', 'Risk from political events and tensions affecting markets', 'Risk of technology failures', 'Risk from interest rate changes'], correctAnswer: 1, explanation: 'Geopolitical risk refers to the potential for political events, conflicts, or policy changes between nations to negatively impact investment returns.' },
+      ],
+    },
   ];
 
   readonly simulationScenarios: SimulationScenario[] = [
