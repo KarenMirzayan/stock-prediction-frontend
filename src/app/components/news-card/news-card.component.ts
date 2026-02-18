@@ -1,12 +1,13 @@
 import { Component, ChangeDetectionStrategy, input, signal, OnDestroy } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideAngularModule, TrendingUp, TrendingDown, Minus, Shuffle, Zap, ExternalLink } from 'lucide-angular';
+import { LucideAngularModule, TrendingUp, TrendingDown, Minus, Shuffle, Zap, ExternalLink, Globe } from 'lucide-angular';
 import { NewsItem, Direction } from '../../models';
 
 @Component({
   selector: 'app-news-card',
   imports: [RouterLink, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
   template: `
     <article class="group rounded-xl border border-border bg-card p-5 transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5">
       <div class="flex items-start justify-between gap-4">
@@ -39,7 +40,11 @@ import { NewsItem, Direction } from '../../models';
           <div class="flex flex-wrap gap-1.5">
             @for (company of news().companies; track company.ticker) {
               <span class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium transition-all duration-150 hover:brightness-125 hover:shadow-sm"
-                    [class]="getDirectionClass(company.direction)">
+                    [class]="getDirectionClass(company.direction)"
+                    [class.border-dashed]="isSectorPrediction(company.ticker)">
+                @if (isSectorPrediction(company.ticker)) {
+                  <lucide-icon [img]="Globe" [size]="12"></lucide-icon>
+                }
                 {{ company.ticker }}
                 <lucide-icon [img]="getDirectionIcon(company.direction)" [size]="12"></lucide-icon>
               </span>
@@ -81,6 +86,7 @@ export class NewsCardComponent implements OnDestroy {
   readonly tooltipVisible = signal(false);
 
   readonly ExternalLink = ExternalLink;
+  readonly Globe = Globe;
 
   private tooltipTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -116,6 +122,10 @@ export class NewsCardComponent implements OnDestroy {
 
   getDirectionIcon(direction: Direction) {
     return this.directionConfig[direction].icon;
+  }
+
+  isSectorPrediction(ticker: string): boolean {
+    return ticker.includes(':');
   }
 
   getSentimentClass(): string {
