@@ -1,8 +1,11 @@
 import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 import { HeaderComponent } from '../../components/header/header.component';
 import { MockDataService } from '../../services/mock-data.service';
-import { Quiz } from '../../models';
+import { EducationApiService } from '../../services/education-api.service';
+import { Quiz, GlossaryTerm } from '../../models';
 import { SimulationScenario } from '../../models';
 import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText } from 'lucide-angular';
 
@@ -65,6 +68,11 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
                   <div class="px-6 pb-6">
                     <p class="text-sm text-muted-foreground">{{ item.definition }}</p>
                   </div>
+                </div>
+              }
+              @if (filteredTerms().length === 0 && searchQuery()) {
+                <div class="col-span-2 py-12 text-center text-sm text-muted-foreground">
+                  No terms found matching "{{ searchQuery() }}".
                 </div>
               }
             </div>
@@ -424,7 +432,9 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
   `,
 })
 export class EducationComponent {
+  private readonly educationApi = inject(EducationApiService);
   readonly data = inject(MockDataService);
+
   readonly activeTab = signal<'glossary' | 'quiz' | 'simulation'>('glossary');
   readonly searchQuery = signal('');
   readonly selectedQuestion = signal(0);
@@ -460,20 +470,35 @@ export class EducationComponent {
   readonly User = User;
   readonly FileText = FileText;
 
+  // API-backed signals
+  readonly glossaryTerms = toSignal(
+    this.educationApi.getGlossaryTerms().pipe(catchError(() => of([] as GlossaryTerm[]))),
+    { initialValue: [] as GlossaryTerm[] }
+  );
+
+  readonly quizzes = toSignal(
+    this.educationApi.getQuizzes().pipe(catchError(() => of([] as Quiz[]))),
+    { initialValue: [] as Quiz[] }
+  );
+
   readonly filteredTerms = computed(() => {
     const query = this.searchQuery().toLowerCase();
-    return this.data.glossaryTerms.filter(t =>
+    return this.glossaryTerms().filter(t =>
       t.term.toLowerCase().includes(query) || t.definition.toLowerCase().includes(query)
     );
   });
 
   readonly filteredQuizzes = computed(() =>
-    this.data.quizzes.filter(q => q.completed === this.showCompleted())
+    this.quizzes().filter(q => q.completed === this.showCompleted())
   );
 
   readonly currentQuestion = computed(() => {
     const quiz = this.activeQuiz();
-    return quiz ? quiz.questions[this.selectedQuestion()] : this.data.quizzes[0].questions[0];
+    const idx = this.selectedQuestion();
+    if (!quiz || !quiz.questions[idx]) {
+      return { id: '', question: '', options: [] as string[], correctAnswer: 0, explanation: '' };
+    }
+    return quiz.questions[idx];
   });
 
   readonly filteredSimulations = computed(() => {
@@ -529,7 +554,6 @@ export class EducationComponent {
     const prediction = this.userPrediction().trim();
     if (!prediction) return;
 
-    // Mock similarity scoring based on prediction length and keyword matches
     const scenario = this.activeSimulation()!;
     const actual = scenario.actualResult.toLowerCase();
     const pred = prediction.toLowerCase();
@@ -539,7 +563,6 @@ export class EducationComponent {
     const matches = uniqueKeywords.filter(kw => pred.includes(kw)).length;
     const ratio = uniqueKeywords.length > 0 ? matches / uniqueKeywords.length : 0;
 
-    // Scale to a score between 25–92 based on keyword overlap and length
     const lengthBonus = Math.min(prediction.length / 200, 1) * 10;
     const rawScore = Math.round(ratio * 80 + lengthBonus + 15);
     const score = Math.min(92, Math.max(25, rawScore));
