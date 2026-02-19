@@ -124,6 +124,24 @@ export interface SimulationScenario {
   feedback?: string;
 }
 
+export interface SimulationApiScenario {
+  id: string;
+  title: string;
+  date: string;
+  period: string;
+  newsHeadline: string;
+  newsContent: string;
+  context: string;
+  sector: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+}
+
+export interface SimulationSubmitResult {
+  similarityScore: number;
+  feedback: string;
+  ourPrediction: string;
+}
+
 export interface SubscribedCompany {
   symbol: string;
   name: string;

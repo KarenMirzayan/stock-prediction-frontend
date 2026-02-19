@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { GlossaryTerm, Quiz } from '../models';
+import { GlossaryTerm, Quiz, SimulationApiScenario, SimulationSubmitResult } from '../models';
 
 interface ApiQuizQuestion {
   id: number;
@@ -19,6 +19,18 @@ interface ApiQuiz {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   questions: ApiQuizQuestion[];
   totalQuestions: number;
+}
+
+interface ApiSimulationScenario {
+  id: number;
+  title: string;
+  date: string;
+  period: string;
+  newsHeadline: string;
+  newsContent: string;
+  context: string;
+  sector: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
 @Injectable({ providedIn: 'root' })
@@ -41,6 +53,19 @@ export class EducationApiService {
           id: String(question.id),
         })),
       })))
+    );
+  }
+
+  getSimulations(): Observable<SimulationApiScenario[]> {
+    return this.http.get<ApiSimulationScenario[]>(`${this.baseUrl}/simulations`).pipe(
+      map(items => items.map(s => ({ ...s, id: String(s.id) })))
+    );
+  }
+
+  submitSimulation(id: string, userPrediction: string): Observable<SimulationSubmitResult> {
+    return this.http.post<SimulationSubmitResult>(
+      `${this.baseUrl}/simulations/${id}/submit`,
+      { userPrediction }
     );
   }
 }

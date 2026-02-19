@@ -5,9 +5,8 @@ import { catchError, of } from 'rxjs';
 import { HeaderComponent } from '../../components/header/header.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { EducationApiService } from '../../services/education-api.service';
-import { Quiz, GlossaryTerm } from '../../models';
-import { SimulationScenario } from '../../models';
-import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText } from 'lucide-angular';
+import { Quiz, GlossaryTerm, SimulationApiScenario, SimulationSubmitResult } from '../../models';
+import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2 } from 'lucide-angular';
 
 @Component({
   selector: 'app-education',
@@ -202,7 +201,7 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
                   <div>
                     <p class="font-medium text-accent">How Simulation Works</p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                      Read historical news, make your forecast, and see how the market actually reacted.
+                      Read real analyzed news, write your market forecast, and compare it with our AI-generated prediction.
                       Learn from real-world scenarios to improve your analytical skills.
                     </p>
                   </div>
@@ -231,7 +230,7 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
                   Period:
                 </div>
                 <div class="flex w-fit flex-wrap rounded-lg border border-border bg-card p-1">
-                  @for (period of simulationPeriods; track period) {
+                  @for (period of simulationPeriods(); track period) {
                     <button (click)="selectedPeriod.set(period)"
                             class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
                             [class.bg-secondary]="selectedPeriod() === period">
@@ -251,11 +250,11 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
                           {{ scenario.difficulty }}
                         </span>
                         <div class="flex items-center gap-2">
-                          @if (scenario.completed && scenario.similarityScore != null) {
+                          @if (completedResults().get(scenario.id); as result) {
                             <span class="flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium"
-                                  [class]="scenario.similarityScore >= 70 ? 'bg-accent/20 text-accent' : scenario.similarityScore >= 40 ? 'bg-orange-500/20 text-orange-500' : 'bg-destructive/20 text-destructive'">
+                                  [class]="result.similarityScore >= 70 ? 'bg-accent/20 text-accent' : result.similarityScore >= 40 ? 'bg-orange-500/20 text-orange-500' : 'bg-destructive/20 text-destructive'">
                               <lucide-icon [img]="Trophy" [size]="12"></lucide-icon>
-                              {{ scenario.similarityScore }}%
+                              {{ result.similarityScore }}%
                             </span>
                           }
                           <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">{{ scenario.sector }}</span>
@@ -269,20 +268,25 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
                     </div>
                     <div class="px-6 pb-6">
                       <p class="mb-3 text-sm font-medium">&ldquo;{{ scenario.newsHeadline }}&rdquo;</p>
-                      <p class="text-sm text-muted-foreground">{{ scenario.context }}</p>
+                      <p class="line-clamp-2 text-sm text-muted-foreground">{{ scenario.context }}</p>
                       <button (click)="startSimulation(scenario)"
                               class="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">
                         <lucide-icon [img]="Play" [size]="16"></lucide-icon>
-                        Start Simulation
+                        {{ completedResults().has(scenario.id) ? 'Try Again' : 'Start Simulation' }}
                       </button>
                     </div>
                   </div>
                 }
               </div>
 
-              @if (filteredSimulations().length === 0) {
+              @if (filteredSimulations().length === 0 && simulations().length > 0) {
                 <div class="py-12 text-center text-sm text-muted-foreground">
                   No {{ showSimCompleted() ? 'completed' : 'new' }} simulations found for the selected period.
+                </div>
+              }
+              @if (simulations().length === 0) {
+                <div class="py-12 text-center text-sm text-muted-foreground">
+                  No simulations available yet. Check back after news has been analyzed.
                 </div>
               }
             </div>
@@ -343,10 +347,15 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
                     class="mt-4 w-full resize-none rounded-lg border border-input bg-background p-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring">
                   </textarea>
                   <button (click)="submitPrediction()"
-                          [disabled]="!userPrediction().trim()"
+                          [disabled]="!userPrediction().trim() || submitting()"
                           class="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
-                    <lucide-icon [img]="Send" [size]="16"></lucide-icon>
-                    Submit Prediction
+                    @if (submitting()) {
+                      <lucide-icon [img]="Loader2" [size]="16" class="animate-spin"></lucide-icon>
+                      Evaluating...
+                    } @else {
+                      <lucide-icon [img]="Send" [size]="16"></lucide-icon>
+                      Submit Prediction
+                    }
                   </button>
                 </div>
               </div>
@@ -363,7 +372,7 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
               <div class="mx-auto max-w-4xl space-y-6">
                 <div class="text-center">
                   <h2 class="text-xl font-bold">{{ activeSimulation()!.title }}</h2>
-                  <p class="mt-1 text-sm text-muted-foreground">Comparison of your prediction with the actual market outcome</p>
+                  <p class="mt-1 text-sm text-muted-foreground">Comparison of your prediction with our AI analysis</p>
                 </div>
 
                 <!-- Side-by-side comparison -->
@@ -379,14 +388,14 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
                     </div>
                   </div>
 
-                  <!-- Actual Result -->
+                  <!-- Our AI Analysis -->
                   <div class="rounded-xl border border-border bg-card">
                     <div class="flex items-center gap-2 border-b border-border p-4">
                       <lucide-icon [img]="BarChart3" [size]="18" class="text-accent"></lucide-icon>
-                      <h3 class="font-semibold">Actual Result</h3>
+                      <h3 class="font-semibold">Our AI Analysis</h3>
                     </div>
                     <div class="p-4">
-                      <p class="text-sm leading-relaxed text-muted-foreground">{{ activeSimulation()!.actualResult }}</p>
+                      <p class="text-sm leading-relaxed text-muted-foreground">{{ simOurPrediction() }}</p>
                     </div>
                   </div>
                 </div>
@@ -444,14 +453,18 @@ export class EducationComponent {
   readonly activeQuiz = signal<Quiz | null>(null);
 
   // Simulation state
-  readonly activeSimulation = signal<SimulationScenario | null>(null);
+  readonly activeSimulation = signal<SimulationApiScenario | null>(null);
   readonly userPrediction = signal('');
   readonly simSubmitted = signal(false);
   readonly simSimilarity = signal(0);
   readonly simFeedback = signal('');
+  readonly simOurPrediction = signal('');
+  readonly submitting = signal(false);
   readonly selectedPeriod = signal('All');
   readonly showSimCompleted = signal(false);
-  readonly simulationPeriods = ['All', 'Q4 2023', 'Q1 2024', 'Q2 2024', 'Q3 2024', 'Q4 2024'] as const;
+
+  // Completed simulations tracked locally for this session
+  readonly completedResults = signal(new Map<string, SimulationSubmitResult>());
 
   readonly BookOpen = BookOpen;
   readonly Search = Search;
@@ -469,6 +482,7 @@ export class EducationComponent {
   readonly BarChart3 = BarChart3;
   readonly User = User;
   readonly FileText = FileText;
+  readonly Loader2 = Loader2;
 
   // API-backed signals
   readonly glossaryTerms = toSignal(
@@ -480,6 +494,16 @@ export class EducationComponent {
     this.educationApi.getQuizzes().pipe(catchError(() => of([] as Quiz[]))),
     { initialValue: [] as Quiz[] }
   );
+
+  readonly simulations = toSignal(
+    this.educationApi.getSimulations().pipe(catchError(() => of([] as SimulationApiScenario[]))),
+    { initialValue: [] as SimulationApiScenario[] }
+  );
+
+  readonly simulationPeriods = computed(() => {
+    const periods = [...new Set(this.simulations().map(s => s.period))].sort();
+    return ['All', ...periods];
+  });
 
   readonly filteredTerms = computed(() => {
     const query = this.searchQuery().toLowerCase();
@@ -504,8 +528,11 @@ export class EducationComponent {
   readonly filteredSimulations = computed(() => {
     const period = this.selectedPeriod();
     const completed = this.showSimCompleted();
-    return this.data.simulationScenarios.filter(s =>
-      s.completed === completed && (period === 'All' || s.period === period)
+    const completedMap = this.completedResults();
+
+    return this.simulations().filter(s =>
+      completedMap.has(s.id) === completed &&
+      (period === 'All' || s.period === period)
     );
   });
 
@@ -536,48 +563,47 @@ export class EducationComponent {
     this.showResult.set(false);
   }
 
-  startSimulation(scenario: SimulationScenario): void {
+  startSimulation(scenario: SimulationApiScenario): void {
     this.activeSimulation.set(scenario);
     this.userPrediction.set('');
     this.simSubmitted.set(false);
     this.simSimilarity.set(0);
     this.simFeedback.set('');
+    this.simOurPrediction.set('');
   }
 
   backToSimulations(): void {
     this.activeSimulation.set(null);
     this.simSubmitted.set(false);
     this.userPrediction.set('');
+    this.simOurPrediction.set('');
   }
 
   submitPrediction(): void {
     const prediction = this.userPrediction().trim();
-    if (!prediction) return;
+    const scenario = this.activeSimulation();
+    if (!prediction || !scenario || this.submitting()) return;
 
-    const scenario = this.activeSimulation()!;
-    const actual = scenario.actualResult.toLowerCase();
-    const pred = prediction.toLowerCase();
+    this.submitting.set(true);
 
-    const keywords = actual.match(/\b\w{4,}\b/g) ?? [];
-    const uniqueKeywords = [...new Set(keywords)];
-    const matches = uniqueKeywords.filter(kw => pred.includes(kw)).length;
-    const ratio = uniqueKeywords.length > 0 ? matches / uniqueKeywords.length : 0;
+    this.educationApi.submitSimulation(scenario.id, prediction).subscribe({
+      next: (result) => {
+        this.simSimilarity.set(result.similarityScore);
+        this.simFeedback.set(result.feedback);
+        this.simOurPrediction.set(result.ourPrediction);
+        this.simSubmitted.set(true);
+        this.submitting.set(false);
 
-    const lengthBonus = Math.min(prediction.length / 200, 1) * 10;
-    const rawScore = Math.round(ratio * 80 + lengthBonus + 15);
-    const score = Math.min(92, Math.max(25, rawScore));
-
-    this.simSimilarity.set(score);
-
-    if (score >= 70) {
-      this.simFeedback.set('Your prediction closely matches the actual market outcome. You correctly identified the key market movements and their drivers. Keep refining your analysis skills to consistently achieve this level of accuracy.');
-    } else if (score >= 40) {
-      this.simFeedback.set('You captured some of the key trends but missed certain nuances in the market reaction. Pay attention to secondary effects and the timeline of market responses. Consider how different market participants react to the same news.');
-    } else {
-      this.simFeedback.set('Your prediction diverged significantly from the actual outcome. Review how this type of news typically impacts the relevant sector. Focus on understanding the immediate vs. long-term market reactions and consider multiple stakeholder perspectives.');
-    }
-
-    this.simSubmitted.set(true);
+        this.completedResults.update(map => {
+          const updated = new Map(map);
+          updated.set(scenario.id, result);
+          return updated;
+        });
+      },
+      error: () => {
+        this.submitting.set(false);
+      }
+    });
   }
 
   getOptionClass(index: number): string {
