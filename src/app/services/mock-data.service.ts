@@ -181,22 +181,45 @@ The move is expected to have broad implications across multiple sectors, particu
   ];
 
   readonly homeEvents: EventItem[] = [
-    { id: '1', title: 'Apple Earnings Report', date: 'Feb 15', time: '4:30 PM EST', company: 'AAPL', sector: 'Technology', relevance: 'high' },
-    { id: '2', title: 'FOMC Meeting Minutes', date: 'Feb 18', time: '2:00 PM EST', sector: 'Economy', relevance: 'high' },
-    { id: '3', title: 'Tesla Investor Day', date: 'Feb 20', time: '10:00 AM EST', company: 'TSLA', sector: 'Automotive', relevance: 'medium' },
+    { id: '1', title: 'FOMC Meeting Minutes', date: 'Feb 18', time: '2:00 PM EST', sector: 'Economy', relevance: 'high' },
+    { id: '2', title: 'Tesla Investor Day', date: 'Feb 20', time: '10:00 AM EST', company: 'TSLA', sector: 'Automotive', relevance: 'medium' },
+    { id: '3', title: 'Consumer Price Index', date: 'Feb 25', time: '8:30 AM EST', sector: 'Economy', relevance: 'high' },
+    { id: '4', title: 'Amazon Q4 Earnings', date: 'Feb 27', time: '4:00 PM EST', company: 'AMZN', sector: 'Technology', relevance: 'high' },
   ];
 
   readonly calendarEvents: CalendarEvent[] = [
-    { id: '1', title: 'Apple Q1 Earnings Report', date: '2026-02-15', time: '4:30 PM EST', company: 'AAPL', sector: 'Technology', relevance: 'high', type: 'earnings' },
-    { id: '2', title: 'FOMC Meeting Minutes Release', date: '2026-02-18', time: '2:00 PM EST', sector: 'Economy', relevance: 'high', type: 'economic' },
-    { id: '3', title: 'Tesla Investor Day', date: '2026-02-20', time: '10:00 AM EST', company: 'TSLA', sector: 'Automotive', relevance: 'medium', type: 'conference' },
-    { id: '4', title: 'Microsoft Dividend Payment', date: '2026-02-22', time: '9:00 AM EST', company: 'MSFT', sector: 'Technology', relevance: 'low', type: 'dividend' },
-    { id: '5', title: 'Consumer Price Index Release', date: '2026-02-25', time: '8:30 AM EST', sector: 'Economy', relevance: 'high', type: 'economic' },
-    { id: '6', title: 'Amazon Q1 Earnings Report', date: '2026-02-27', time: '4:00 PM EST', company: 'AMZN', sector: 'Technology', relevance: 'high', type: 'earnings' },
-    { id: '7', title: 'JPMorgan Banking Conference', date: '2026-02-28', time: '9:00 AM EST', company: 'JPM', sector: 'Finance', relevance: 'medium', type: 'conference' },
-    { id: '8', title: 'GDP Growth Report Q4', date: '2026-02-05', time: '8:30 AM EST', sector: 'Economy', relevance: 'high', type: 'economic' },
-    { id: '9', title: 'Nvidia Earnings Call', date: '2026-02-10', time: '5:00 PM EST', company: 'NVDA', sector: 'Technology', relevance: 'high', type: 'earnings' },
-    { id: '10', title: 'Exxon Q1 Earnings', date: '2026-02-12', time: '7:00 AM EST', company: 'XOM', sector: 'Energy', relevance: 'medium', type: 'earnings' },
+    // Week 1: Feb 2–8
+    { id: '1',  title: 'Consumer Confidence Index',     date: '2026-02-03', time: '10:00 AM EST', sector: 'Economy',     relevance: 'medium', type: 'economic' },
+    { id: '2',  title: 'Alphabet Q4 Earnings',          date: '2026-02-04', time: '4:30 PM EST',  company: 'GOOGL',      sector: 'Technology', relevance: 'high',   type: 'earnings' },
+    { id: '3',  title: 'GDP Growth Report Q4',          date: '2026-02-05', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'high',   type: 'economic' },
+    { id: '4',  title: 'Amazon Investor Day',           date: '2026-02-05', time: '1:00 PM EST',  company: 'AMZN',       sector: 'Technology', relevance: 'medium', type: 'conference' },
+    { id: '5',  title: 'Non-Farm Payrolls',             date: '2026-02-06', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'high',   type: 'economic' },
+    // Week 2: Feb 9–15
+    { id: '6',  title: 'Goldman Sachs Tech Conference', date: '2026-02-09', time: '9:00 AM EST',  company: 'GS',         sector: 'Finance',    relevance: 'medium', type: 'conference' },
+    { id: '7',  title: 'Apple Quarterly Dividend',      date: '2026-02-10', time: '9:00 AM EST',  company: 'AAPL',       sector: 'Technology', relevance: 'low',    type: 'dividend' },
+    { id: '8',  title: 'Nvidia Q4 Earnings Call',       date: '2026-02-10', time: '5:00 PM EST',  company: 'NVDA',       sector: 'Technology', relevance: 'high',   type: 'earnings' },
+    { id: '9',  title: 'Microsoft Q4 Earnings',         date: '2026-02-11', time: '4:30 PM EST',  company: 'MSFT',       sector: 'Technology', relevance: 'high',   type: 'earnings' },
+    { id: '10', title: 'PPI Data Release',              date: '2026-02-12', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'medium', type: 'economic' },
+    { id: '11', title: 'Exxon Q4 Earnings',             date: '2026-02-12', time: '7:00 AM EST',  company: 'XOM',        sector: 'Energy',     relevance: 'medium', type: 'earnings' },
+    { id: '12', title: 'Consumer Sentiment UMich',      date: '2026-02-13', time: '10:00 AM EST', sector: 'Economy',     relevance: 'low',    type: 'economic' },
+    { id: '13', title: 'Apple Q1 Earnings Report',      date: '2026-02-15', time: '4:30 PM EST',  company: 'AAPL',       sector: 'Technology', relevance: 'high',   type: 'earnings' },
+    // Week 3: Feb 16–22 (current week, today = Feb 18)
+    { id: '14', title: 'Retail Sales Data',             date: '2026-02-17', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'high',   type: 'economic' },
+    { id: '15', title: 'FOMC Meeting Minutes',          date: '2026-02-18', time: '2:00 PM EST',  sector: 'Economy',     relevance: 'high',   type: 'economic' },
+    { id: '16', title: 'Goldman Sachs Dividend',        date: '2026-02-18', time: '9:00 AM EST',  company: 'GS',         sector: 'Finance',    relevance: 'low',    type: 'dividend' },
+    { id: '17', title: 'Jobless Claims Weekly',         date: '2026-02-19', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'medium', type: 'economic' },
+    { id: '18', title: 'Chevron Q4 Earnings',           date: '2026-02-20', time: '7:30 AM EST',  company: 'CVX',        sector: 'Energy',     relevance: 'medium', type: 'earnings' },
+    { id: '19', title: 'Tesla Investor Day',            date: '2026-02-20', time: '10:00 AM EST', company: 'TSLA',       sector: 'Automotive', relevance: 'medium', type: 'conference' },
+    { id: '20', title: 'Microsoft Dividend Payment',    date: '2026-02-22', time: '9:00 AM EST',  company: 'MSFT',       sector: 'Technology', relevance: 'low',    type: 'dividend' },
+    // Week 4: Feb 23–28
+    { id: '21', title: 'Home Sales Data',               date: '2026-02-23', time: '10:00 AM EST', sector: 'Economy',     relevance: 'medium', type: 'economic' },
+    { id: '22', title: 'Berkshire Annual Report',       date: '2026-02-24', time: '8:00 AM EST',  company: 'BRK.B',      sector: 'Finance',    relevance: 'medium', type: 'conference' },
+    { id: '23', title: 'Consumer Price Index',          date: '2026-02-25', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'high',   type: 'economic' },
+    { id: '24', title: 'NVIDIA Quarterly Dividend',     date: '2026-02-25', time: '9:00 AM EST',  company: 'NVDA',       sector: 'Technology', relevance: 'low',    type: 'dividend' },
+    { id: '25', title: 'GDP Revision Q4 Final',         date: '2026-02-26', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'high',   type: 'economic' },
+    { id: '26', title: 'Amazon Q4 Earnings Report',     date: '2026-02-27', time: '4:00 PM EST',  company: 'AMZN',       sector: 'Technology', relevance: 'high',   type: 'earnings' },
+    { id: '27', title: 'JPMorgan Healthcare Conf.',     date: '2026-02-28', time: '9:00 AM EST',  company: 'JPM',        sector: 'Finance',    relevance: 'medium', type: 'conference' },
+    { id: '28', title: 'Personal Income & Spending',    date: '2026-02-28', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'medium', type: 'economic' },
   ];
 
   readonly heatmapSectors: HeatmapSector[] = [
