@@ -97,14 +97,31 @@ export interface QuizQuestion {
   explanation: string;
 }
 
+export interface Quiz {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  questions: QuizQuestion[];
+  completed: boolean;
+  score?: number;
+  totalQuestions: number;
+}
+
 export interface SimulationScenario {
   id: string;
   title: string;
   date: string;
+  period: string;
   newsHeadline: string;
+  newsContent: string;
   context: string;
   sector: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  actualResult: string;
+  completed: boolean;
+  similarityScore?: number;
+  feedback?: string;
 }
 
 export interface SubscribedCompany {
