@@ -136,10 +136,20 @@ export interface SimulationApiScenario {
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
+export interface SimulationPrediction {
+  scope: string;
+  direction: string;
+  timeHorizon?: string;
+  confidence: number;
+  rationale: string;
+  targets: string[];
+  evidence: string[];
+}
+
 export interface SimulationSubmitResult {
   similarityScore: number;
   feedback: string;
-  ourPrediction: string;
+  predictions: SimulationPrediction[];
 }
 
 export interface SubscribedCompany {

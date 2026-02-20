@@ -5,8 +5,15 @@ import { catchError, of } from 'rxjs';
 import { HeaderComponent } from '../../components/header/header.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { EducationApiService } from '../../services/education-api.service';
-import { Quiz, GlossaryTerm, SimulationApiScenario, SimulationSubmitResult } from '../../models';
-import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2 } from 'lucide-angular';
+import { Quiz, GlossaryTerm, SimulationApiScenario, SimulationSubmitResult, SimulationPrediction } from '../../models';
+import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2, SlidersHorizontal } from 'lucide-angular';
+
+interface CompletedSimRecord {
+  userPrediction: string;
+  similarityScore: number;
+  feedback: string;
+  predictions: SimulationPrediction[];
+}
 
 @Component({
   selector: 'app-education',
@@ -192,249 +199,471 @@ import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCirc
 
         <!-- Simulation Tab -->
         @if (activeTab() === 'simulation') {
-          @if (activeSimulation() === null) {
-            <!-- Simulation List View -->
-            <div class="space-y-6">
+
+          <!-- New / Completed toggle — hidden while actively playing or viewing a completed detail -->
+          @if (simView() === 'setup' || simView() === 'completed-list') {
+            <div class="mb-6 grid w-fit grid-cols-2 rounded-lg border border-border bg-card p-1">
+              <button (click)="simView.set('setup')"
+                      class="rounded-md px-4 py-2 text-sm font-medium transition-colors"
+                      [class.bg-secondary]="simView() === 'setup'">
+                New
+              </button>
+              <button (click)="simView.set('completed-list')"
+                      class="rounded-md px-4 py-2 text-sm font-medium transition-colors"
+                      [class.bg-secondary]="simView() === 'completed-list'">
+                Completed
+              </button>
+            </div>
+          }
+
+          <!-- ── Setup View ── -->
+          @if (simView() === 'setup') {
+            <div class="space-y-8">
+
+              <!-- Info box -->
               <div class="rounded-lg border border-accent/30 bg-accent/10 p-4">
                 <div class="flex items-start gap-3">
                   <lucide-icon [img]="Lightbulb" [size]="20" class="mt-0.5 shrink-0 text-accent"></lucide-icon>
                   <div>
                     <p class="font-medium text-accent">How Simulation Works</p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                      Read real analyzed news, write your market forecast, and compare it with our AI-generated prediction.
-                      Learn from real-world scenarios to improve your analytical skills.
+                      Select a difficulty level and start your session. Read real analyzed news, write your market forecast, and compare it with our AI-generated prediction. Simulations are presented one after another — complete each to build your analytical skills.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <!-- New / Completed Toggle + Period Filter -->
-              <div class="flex flex-wrap items-center gap-4">
-                <div class="grid w-fit grid-cols-2 rounded-lg border border-border bg-card p-1">
-                  <button (click)="showSimCompleted.set(false)"
-                          class="rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                          [class.bg-secondary]="!showSimCompleted()">
-                    New
+              <!-- Difficulty selector + Start button -->
+              <div>
+                <p class="mb-3 text-sm font-medium">Select Difficulty</p>
+                <div class="flex flex-wrap items-center gap-3">
+                  <button (click)="selectedDifficulty.set('Beginner')"
+                          class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+                          [class]="selectedDifficulty() === 'Beginner'
+                            ? 'bg-secondary text-secondary-foreground border-accent/50'
+                            : 'border-border hover:bg-secondary'">
+                    Beginner
                   </button>
-                  <button (click)="showSimCompleted.set(true)"
-                          class="rounded-md px-4 py-2 text-sm font-medium transition-colors"
-                          [class.bg-secondary]="showSimCompleted()">
-                    Completed
+                  <button (click)="selectedDifficulty.set('Intermediate')"
+                          class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+                          [class]="selectedDifficulty() === 'Intermediate'
+                            ? 'bg-accent/10 text-accent border-accent'
+                            : 'border-border hover:bg-secondary'">
+                    Intermediate
+                  </button>
+                  <button (click)="selectedDifficulty.set('Advanced')"
+                          class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+                          [class]="selectedDifficulty() === 'Advanced'
+                            ? 'bg-primary text-primary-foreground border-transparent'
+                            : 'border-border hover:bg-secondary'">
+                    Advanced
+                  </button>
+
+                  <button (click)="startSession()"
+                          [disabled]="!selectedDifficulty() || availableSimulations().length === 0"
+                          class="flex items-center gap-2 rounded-md bg-accent px-5 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+                    <lucide-icon [img]="Play" [size]="16"></lucide-icon>
+                    Start
                   </button>
                 </div>
-              </div>
 
-              <div class="flex flex-wrap items-center gap-3">
-                <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                  <lucide-icon [img]="Calendar" [size]="16"></lucide-icon>
-                  Period:
-                </div>
-                <div class="flex w-fit flex-wrap rounded-lg border border-border bg-card p-1">
-                  @for (period of simulationPeriods(); track period) {
-                    <button (click)="selectedPeriod.set(period)"
-                            class="rounded-md px-3 py-1.5 text-xs font-medium transition-colors"
-                            [class.bg-secondary]="selectedPeriod() === period">
-                      {{ period }}
-                    </button>
-                  }
-                </div>
-              </div>
-
-              <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                @for (scenario of filteredSimulations(); track scenario.id) {
-                  <div class="cursor-pointer rounded-xl border border-border bg-card transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5">
-                    <div class="p-6">
-                      <div class="flex items-start justify-between gap-2">
-                        <span class="rounded-md px-2 py-0.5 text-xs font-medium"
-                              [class]="getDifficultyClass(scenario.difficulty)">
-                          {{ scenario.difficulty }}
-                        </span>
-                        <div class="flex items-center gap-2">
-                          @if (completedResults().get(scenario.id); as result) {
-                            <span class="flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium"
-                                  [class]="result.similarityScore >= 70 ? 'bg-accent/20 text-accent' : result.similarityScore >= 40 ? 'bg-orange-500/20 text-orange-500' : 'bg-destructive/20 text-destructive'">
-                              <lucide-icon [img]="Trophy" [size]="12"></lucide-icon>
-                              {{ result.similarityScore }}%
-                            </span>
-                          }
-                          <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">{{ scenario.sector }}</span>
-                        </div>
-                      </div>
-                      <h3 class="mt-3 text-lg font-semibold">{{ scenario.title }}</h3>
-                      <div class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
-                        {{ scenario.date }} &middot; {{ scenario.period }}
-                      </div>
-                    </div>
-                    <div class="px-6 pb-6">
-                      <p class="mb-3 text-sm font-medium">&ldquo;{{ scenario.newsHeadline }}&rdquo;</p>
-                      <p class="line-clamp-2 text-sm text-muted-foreground">{{ scenario.context }}</p>
-                      <button (click)="startSimulation(scenario)"
-                              class="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">
-                        <lucide-icon [img]="Play" [size]="16"></lucide-icon>
-                        {{ completedResults().has(scenario.id) ? 'Try Again' : 'Start Simulation' }}
-                      </button>
-                    </div>
-                  </div>
+                @if (selectedDifficulty()) {
+                  <p class="mt-2 text-xs text-muted-foreground">
+                    {{ availableSimulations().length }}
+                    {{ availableSimulations().length === 1 ? 'simulation' : 'simulations' }} available
+                  </p>
                 }
               </div>
 
-              @if (filteredSimulations().length === 0 && simulations().length > 0) {
-                <div class="py-12 text-center text-sm text-muted-foreground">
-                  No {{ showSimCompleted() ? 'completed' : 'new' }} simulations found for the selected period.
+              <!-- Sector filter -->
+              @if (simulationSectors().length > 1) {
+                <div>
+                  <div class="mb-2 flex items-center gap-2">
+                    <lucide-icon [img]="SlidersHorizontal" [size]="14" class="text-muted-foreground"></lucide-icon>
+                    <p class="text-sm text-muted-foreground">Filter by Sector</p>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    @for (sector of simulationSectors(); track sector) {
+                      <button (click)="selectedSector.set(sector)"
+                              class="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
+                              [class]="selectedSector() === sector
+                                ? 'bg-secondary border-accent/50 font-semibold'
+                                : 'border-border hover:bg-secondary'">
+                        {{ sector }}
+                      </button>
+                    }
+                  </div>
                 </div>
               }
-              @if (simulations().length === 0) {
-                <div class="py-12 text-center text-sm text-muted-foreground">
-                  No simulations available yet. Check back after news has been analyzed.
-                </div>
-              }
+
             </div>
-          } @else if (!simSubmitted()) {
-            <!-- Simulation: Read News & Write Prediction -->
-            <div class="space-y-4">
-              <button (click)="backToSimulations()"
-                      class="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
-                <lucide-icon [img]="ArrowLeft" [size]="16"></lucide-icon>
-                Back to simulations
-              </button>
+          }
 
-              <div class="mx-auto max-w-3xl space-y-6">
-                <!-- News Card -->
-                <div class="rounded-xl border border-border bg-card">
-                  <div class="border-b border-border p-6">
-                    <div class="flex items-start justify-between gap-3">
-                      <div>
-                        <div class="flex items-center gap-2">
-                          <span class="rounded-md px-2 py-0.5 text-xs font-medium"
-                                [class]="getDifficultyClass(activeSimulation()!.difficulty)">
-                            {{ activeSimulation()!.difficulty }}
-                          </span>
-                          <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">{{ activeSimulation()!.sector }}</span>
-                        </div>
-                        <h2 class="mt-3 text-xl font-bold">{{ activeSimulation()!.title }}</h2>
-                        <div class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
-                          {{ activeSimulation()!.date }}
-                        </div>
-                      </div>
-                      <lucide-icon [img]="FileText" [size]="24" class="shrink-0 text-accent"></lucide-icon>
-                    </div>
-                  </div>
-                  <div class="p-6">
-                    <h3 class="text-lg font-semibold">&ldquo;{{ activeSimulation()!.newsHeadline }}&rdquo;</h3>
-                    <p class="mt-4 text-sm leading-relaxed text-muted-foreground">{{ activeSimulation()!.newsContent }}</p>
-                    <div class="mt-4 rounded-lg bg-secondary/50 p-3">
-                      <p class="text-xs font-medium text-muted-foreground">Context: {{ activeSimulation()!.context }}</p>
-                    </div>
-                  </div>
+          <!-- ── Playing View ── -->
+          @if (simView() === 'playing') {
+            <div class="space-y-4">
+
+              <!-- Header row: back + progress -->
+              <div class="flex items-center justify-between">
+                <button (click)="backToSetup()"
+                        class="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
+                  <lucide-icon [img]="ArrowLeft" [size]="16"></lucide-icon>
+                  Back
+                </button>
+                @if (currentSimIndex() < simulationQueue().length) {
+                  <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {{ currentSimIndex() + 1 }} of {{ simulationQueue().length }}
+                  </span>
+                }
+              </div>
+
+              <!-- All simulations in queue exhausted -->
+              @if (currentSimIndex() >= simulationQueue().length) {
+                <div class="py-16 text-center">
+                  <lucide-icon [img]="Trophy" [size]="48" class="mx-auto text-accent"></lucide-icon>
+                  <h2 class="mt-4 text-xl font-bold">Session Complete!</h2>
+                  <p class="mt-2 text-sm text-muted-foreground">You worked through all simulations in this session.</p>
+                  <button (click)="backToSetup()"
+                          class="mt-6 inline-flex items-center gap-2 rounded-md bg-accent px-6 py-2.5 text-sm font-medium text-accent-foreground hover:bg-accent/90">
+                    Start New Session
+                    <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
+                  </button>
                 </div>
 
-                <!-- Prediction Input -->
-                <div class="rounded-xl border border-border bg-card p-6">
-                  <div class="flex items-center gap-2">
-                    <lucide-icon [img]="Brain" [size]="20" class="text-accent"></lucide-icon>
-                    <h3 class="text-lg font-semibold">Your Prediction</h3>
+              } @else if (!simSubmitted()) {
+                <!-- Read news & write prediction -->
+                <div class="mx-auto max-w-3xl space-y-6">
+
+                  <!-- News Card -->
+                  <div class="rounded-xl border border-border bg-card">
+                    <div class="border-b border-border p-6">
+                      <div class="flex items-start justify-between gap-3">
+                        <div>
+                          <div class="flex items-center gap-2">
+                            <span class="rounded-md px-2 py-0.5 text-xs font-medium"
+                                  [class]="getDifficultyClass(activeSimulation()!.difficulty)">
+                              {{ activeSimulation()!.difficulty }}
+                            </span>
+                            <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">
+                              {{ activeSimulation()!.sector }}
+                            </span>
+                          </div>
+                          <h2 class="mt-3 text-xl font-bold">{{ activeSimulation()!.title }}</h2>
+                          <div class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                            {{ activeSimulation()!.date }}
+                          </div>
+                        </div>
+                        <lucide-icon [img]="FileText" [size]="24" class="shrink-0 text-accent"></lucide-icon>
+                      </div>
+                    </div>
+                    <div class="p-6">
+                      <h3 class="text-lg font-semibold">&ldquo;{{ activeSimulation()!.newsHeadline }}&rdquo;</h3>
+                      <p class="mt-4 text-sm leading-relaxed text-muted-foreground">{{ activeSimulation()!.newsContent }}</p>
+                      <div class="mt-4 rounded-lg bg-secondary/50 p-3">
+                        <p class="text-xs font-medium text-muted-foreground">Context: {{ activeSimulation()!.context }}</p>
+                      </div>
+                    </div>
                   </div>
-                  <p class="mt-1 text-sm text-muted-foreground">
-                    Based on this news, what do you think happened to the market and the affected companies? Describe the expected impact.
-                  </p>
-                  <textarea
-                    [ngModel]="userPrediction()"
-                    (ngModelChange)="userPrediction.set($event)"
-                    placeholder="Write your prediction here... e.g., 'I expect banking stocks to rise 2-3% as higher rates boost net interest margins. The broader market may dip slightly on tightening concerns...'"
-                    rows="5"
-                    class="mt-4 w-full resize-none rounded-lg border border-input bg-background p-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring">
-                  </textarea>
-                  <button (click)="submitPrediction()"
-                          [disabled]="!userPrediction().trim() || submitting()"
-                          class="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
-                    @if (submitting()) {
-                      <lucide-icon [img]="Loader2" [size]="16" class="animate-spin"></lucide-icon>
-                      Evaluating...
+
+                  <!-- Prediction Input -->
+                  <div class="rounded-xl border border-border bg-card p-6">
+                    <div class="flex items-center gap-2">
+                      <lucide-icon [img]="Brain" [size]="20" class="text-accent"></lucide-icon>
+                      <h3 class="text-lg font-semibold">Your Prediction</h3>
+                    </div>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      Based on this news, what do you think happened to the market and the affected companies? Describe the expected impact.
+                    </p>
+                    <textarea
+                      [ngModel]="userPrediction()"
+                      (ngModelChange)="userPrediction.set($event)"
+                      placeholder="Write your prediction here... e.g., 'I expect banking stocks to rise 2-3% as higher rates boost net interest margins. The broader market may dip slightly on tightening concerns...'"
+                      rows="5"
+                      class="mt-4 w-full resize-none rounded-lg border border-input bg-background p-3 text-sm outline-none placeholder:text-muted-foreground/60 focus:ring-2 focus:ring-ring">
+                    </textarea>
+                    <button (click)="submitPrediction()"
+                            [disabled]="!userPrediction().trim() || submitting()"
+                            class="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+                      @if (submitting()) {
+                        <lucide-icon [img]="Loader2" [size]="16" class="animate-spin"></lucide-icon>
+                        Evaluating...
+                      } @else {
+                        <lucide-icon [img]="Send" [size]="16"></lucide-icon>
+                        Submit Prediction
+                      }
+                    </button>
+                  </div>
+
+                </div>
+
+              } @else {
+                <!-- Feedback / Comparison View -->
+                <div class="mx-auto max-w-4xl space-y-6">
+                  <div class="text-center">
+                    <h2 class="text-xl font-bold">{{ activeSimulation()!.title }}</h2>
+                    <p class="mt-1 text-sm text-muted-foreground">Comparison of your prediction with our AI analysis</p>
+                  </div>
+
+                  <!-- Side-by-side comparison -->
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <!-- Left: user's prediction -->
+                    <div class="rounded-xl border border-border bg-card">
+                      <div class="flex items-center gap-2 border-b border-border p-4">
+                        <lucide-icon [img]="User" [size]="18" class="text-accent"></lucide-icon>
+                        <h3 class="font-semibold">Your Prediction</h3>
+                      </div>
+                      <div class="p-4">
+                        <p class="text-sm leading-relaxed text-muted-foreground">{{ userPrediction() }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Right: individual AI predictions -->
+                    <div class="rounded-xl border border-border bg-card">
+                      <div class="flex items-center gap-2 border-b border-border p-4">
+                        <lucide-icon [img]="BarChart3" [size]="18" class="text-accent"></lucide-icon>
+                        <h3 class="font-semibold">AI Predictions</h3>
+                        <span class="ml-auto rounded-md border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
+                          {{ simPredictions().length }}
+                        </span>
+                      </div>
+                      <div class="divide-y divide-border">
+                        @for (pred of simPredictions(); track $index) {
+                          <div class="space-y-2 p-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <span class="rounded-md px-2 py-0.5 text-xs font-semibold"
+                                    [class]="getPredictionDirectionClass(pred.direction)">
+                                {{ pred.direction }}
+                              </span>
+                              <span class="rounded-md border border-border px-2 py-0.5 text-xs">
+                                {{ getPredictionScopeLabel(pred.scope) }}
+                              </span>
+                              @if (pred.timeHorizon) {
+                                <span class="text-xs text-muted-foreground">{{ getTimeHorizonLabel(pred.timeHorizon) }}</span>
+                              }
+                              @if (pred.confidence) {
+                                <span class="text-xs text-muted-foreground">{{ pred.confidence }}% confidence</span>
+                              }
+                            </div>
+                            @if (pred.targets.length > 0) {
+                              <div class="flex flex-wrap gap-1">
+                                @for (target of pred.targets; track target) {
+                                  <span class="rounded bg-secondary px-1.5 py-0.5 text-xs font-medium">{{ target }}</span>
+                                }
+                              </div>
+                            }
+                            @if (pred.rationale) {
+                              <p class="text-sm leading-relaxed text-muted-foreground">{{ pred.rationale }}</p>
+                            }
+                          </div>
+                        } @empty {
+                          <div class="p-4 text-sm text-muted-foreground">No predictions available for this article.</div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Similarity & Feedback -->
+                  <div class="rounded-xl border border-border bg-card p-6">
+                    <div class="flex flex-col items-center gap-4 sm:flex-row">
+                      <div class="flex shrink-0 flex-col items-center gap-1">
+                        <div class="flex h-20 w-20 items-center justify-center rounded-full border-4"
+                             [class]="simSimilarity() >= 70 ? 'border-accent text-accent' : simSimilarity() >= 40 ? 'border-orange-500 text-orange-500' : 'border-destructive text-destructive'">
+                          <span class="text-xl font-bold">{{ simSimilarity() }}%</span>
+                        </div>
+                        <span class="text-xs font-medium text-muted-foreground">Similarity</span>
+                      </div>
+                      <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                          <lucide-icon [img]="Lightbulb" [size]="18"
+                                       [class]="simSimilarity() >= 70 ? 'text-accent' : simSimilarity() >= 40 ? 'text-orange-500' : 'text-destructive'"></lucide-icon>
+                          <h4 class="font-semibold"
+                              [class]="simSimilarity() >= 70 ? 'text-accent' : simSimilarity() >= 40 ? 'text-orange-500' : 'text-destructive'">
+                            {{ simSimilarity() >= 70 ? 'Great Analysis!' : simSimilarity() >= 40 ? 'Good Effort' : 'Keep Learning' }}
+                          </h4>
+                        </div>
+                        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{{ simFeedback() }}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Next / Finish button -->
+                  <button (click)="nextSimulation()"
+                          class="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90">
+                    @if (currentSimIndex() + 1 < simulationQueue().length) {
+                      Next Simulation
+                      <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
                     } @else {
-                      <lucide-icon [img]="Send" [size]="16"></lucide-icon>
-                      Submit Prediction
+                      Finish Session
+                      <lucide-icon [img]="Trophy" [size]="16"></lucide-icon>
                     }
                   </button>
                 </div>
-              </div>
+              }
+
             </div>
-          } @else {
-            <!-- Simulation: Comparison View -->
+          }
+
+          <!-- ── Completed List View ── -->
+          @if (simView() === 'completed-list') {
+            <div class="space-y-6">
+              @if (completedSimulations().length === 0) {
+                <div class="py-16 text-center text-sm text-muted-foreground">
+                  You haven't completed any simulations yet. Start a new session to get going!
+                </div>
+              } @else {
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  @for (scenario of completedSimulations(); track scenario.id) {
+                    <div (click)="viewCompletedSim(scenario)"
+                         class="cursor-pointer rounded-xl border border-border bg-card transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5">
+                      <div class="p-6">
+                        <div class="flex items-start justify-between gap-2">
+                          <span class="rounded-md px-2 py-0.5 text-xs font-medium"
+                                [class]="getDifficultyClass(scenario.difficulty)">
+                            {{ scenario.difficulty }}
+                          </span>
+                          <div class="flex items-center gap-2">
+                            @if (completedResults().get(scenario.id); as result) {
+                              <span class="flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium"
+                                    [class]="result.similarityScore >= 70 ? 'bg-accent/20 text-accent' : result.similarityScore >= 40 ? 'bg-orange-500/20 text-orange-500' : 'bg-destructive/20 text-destructive'">
+                                <lucide-icon [img]="Trophy" [size]="12"></lucide-icon>
+                                {{ result.similarityScore }}%
+                              </span>
+                            }
+                            <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">{{ scenario.sector }}</span>
+                          </div>
+                        </div>
+                        <h3 class="mt-3 text-lg font-semibold">{{ scenario.title }}</h3>
+                        <div class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                          {{ scenario.date }} &middot; {{ scenario.period }}
+                        </div>
+                      </div>
+                      <div class="px-6 pb-6">
+                        <p class="mb-3 text-sm font-medium">&ldquo;{{ scenario.newsHeadline }}&rdquo;</p>
+                        <p class="line-clamp-2 text-sm text-muted-foreground">{{ scenario.context }}</p>
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+
+          <!-- ── Completed Detail View ── -->
+          @if (simView() === 'completed-detail' && viewingCompletedSim()) {
             <div class="space-y-4">
-              <button (click)="backToSimulations()"
+              <button (click)="backToCompletedList()"
                       class="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground">
                 <lucide-icon [img]="ArrowLeft" [size]="16"></lucide-icon>
-                Back to simulations
+                Back to completed
               </button>
 
               <div class="mx-auto max-w-4xl space-y-6">
                 <div class="text-center">
-                  <h2 class="text-xl font-bold">{{ activeSimulation()!.title }}</h2>
-                  <p class="mt-1 text-sm text-muted-foreground">Comparison of your prediction with our AI analysis</p>
-                </div>
-
-                <!-- Side-by-side comparison -->
-                <div class="grid gap-4 md:grid-cols-2">
-                  <!-- User's Prediction -->
-                  <div class="rounded-xl border border-border bg-card">
-                    <div class="flex items-center gap-2 border-b border-border p-4">
-                      <lucide-icon [img]="User" [size]="18" class="text-accent"></lucide-icon>
-                      <h3 class="font-semibold">Your Prediction</h3>
-                    </div>
-                    <div class="p-4">
-                      <p class="text-sm leading-relaxed text-muted-foreground">{{ userPrediction() }}</p>
-                    </div>
-                  </div>
-
-                  <!-- Our AI Analysis -->
-                  <div class="rounded-xl border border-border bg-card">
-                    <div class="flex items-center gap-2 border-b border-border p-4">
-                      <lucide-icon [img]="BarChart3" [size]="18" class="text-accent"></lucide-icon>
-                      <h3 class="font-semibold">Our AI Analysis</h3>
-                    </div>
-                    <div class="p-4">
-                      <p class="text-sm leading-relaxed text-muted-foreground">{{ simOurPrediction() }}</p>
-                    </div>
+                  <h2 class="text-xl font-bold">{{ viewingCompletedSim()!.title }}</h2>
+                  <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                    <span class="rounded-md px-2 py-0.5 text-xs font-medium"
+                          [class]="getDifficultyClass(viewingCompletedSim()!.difficulty)">
+                      {{ viewingCompletedSim()!.difficulty }}
+                    </span>
+                    <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">
+                      {{ viewingCompletedSim()!.sector }}
+                    </span>
+                    <span class="flex items-center gap-1 text-xs text-muted-foreground">
+                      <lucide-icon [img]="Calendar" [size]="12"></lucide-icon>
+                      {{ viewingCompletedSim()!.date }}
+                    </span>
                   </div>
                 </div>
 
-                <!-- Similarity & Feedback -->
-                <div class="rounded-xl border border-border bg-card p-6">
-                  <div class="flex flex-col items-center gap-4 sm:flex-row">
-                    <!-- Similarity Score -->
-                    <div class="flex shrink-0 flex-col items-center gap-1">
-                      <div class="flex h-20 w-20 items-center justify-center rounded-full border-4"
-                           [class]="simSimilarity() >= 70 ? 'border-accent text-accent' : simSimilarity() >= 40 ? 'border-orange-500 text-orange-500' : 'border-destructive text-destructive'">
-                        <span class="text-xl font-bold">{{ simSimilarity() }}%</span>
+                @if (completedResults().get(viewingCompletedSim()!.id); as result) {
+                  <!-- Side-by-side comparison -->
+                  <div class="grid gap-4 md:grid-cols-2">
+                    <!-- Left: user's prediction -->
+                    <div class="rounded-xl border border-border bg-card">
+                      <div class="flex items-center gap-2 border-b border-border p-4">
+                        <lucide-icon [img]="User" [size]="18" class="text-accent"></lucide-icon>
+                        <h3 class="font-semibold">Your Prediction</h3>
                       </div>
-                      <span class="text-xs font-medium text-muted-foreground">Similarity</span>
+                      <div class="p-4">
+                        <p class="text-sm leading-relaxed text-muted-foreground">{{ result.userPrediction }}</p>
+                      </div>
                     </div>
 
-                    <!-- Feedback -->
-                    <div class="flex-1">
-                      <div class="flex items-center gap-2">
-                        <lucide-icon [img]="Lightbulb" [size]="18"
-                                     [class]="simSimilarity() >= 70 ? 'text-accent' : simSimilarity() >= 40 ? 'text-orange-500' : 'text-destructive'"></lucide-icon>
-                        <h4 class="font-semibold"
-                            [class]="simSimilarity() >= 70 ? 'text-accent' : simSimilarity() >= 40 ? 'text-orange-500' : 'text-destructive'">
-                          {{ simSimilarity() >= 70 ? 'Great Analysis!' : simSimilarity() >= 40 ? 'Good Effort' : 'Keep Learning' }}
-                        </h4>
+                    <!-- Right: individual AI predictions -->
+                    <div class="rounded-xl border border-border bg-card">
+                      <div class="flex items-center gap-2 border-b border-border p-4">
+                        <lucide-icon [img]="BarChart3" [size]="18" class="text-accent"></lucide-icon>
+                        <h3 class="font-semibold">AI Predictions</h3>
+                        <span class="ml-auto rounded-md border border-border px-1.5 py-0.5 text-xs text-muted-foreground">
+                          {{ result.predictions.length }}
+                        </span>
                       </div>
-                      <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{{ simFeedback() }}</p>
+                      <div class="divide-y divide-border">
+                        @for (pred of result.predictions; track $index) {
+                          <div class="space-y-2 p-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                              <span class="rounded-md px-2 py-0.5 text-xs font-semibold"
+                                    [class]="getPredictionDirectionClass(pred.direction)">
+                                {{ pred.direction }}
+                              </span>
+                              <span class="rounded-md border border-border px-2 py-0.5 text-xs">
+                                {{ getPredictionScopeLabel(pred.scope) }}
+                              </span>
+                              @if (pred.timeHorizon) {
+                                <span class="text-xs text-muted-foreground">{{ getTimeHorizonLabel(pred.timeHorizon) }}</span>
+                              }
+                              @if (pred.confidence) {
+                                <span class="text-xs text-muted-foreground">{{ pred.confidence }}% confidence</span>
+                              }
+                            </div>
+                            @if (pred.targets.length > 0) {
+                              <div class="flex flex-wrap gap-1">
+                                @for (target of pred.targets; track target) {
+                                  <span class="rounded bg-secondary px-1.5 py-0.5 text-xs font-medium">{{ target }}</span>
+                                }
+                              </div>
+                            }
+                            @if (pred.rationale) {
+                              <p class="text-sm leading-relaxed text-muted-foreground">{{ pred.rationale }}</p>
+                            }
+                          </div>
+                        } @empty {
+                          <div class="p-4 text-sm text-muted-foreground">No predictions available for this article.</div>
+                        }
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <button (click)="backToSimulations()"
-                        class="flex w-full items-center justify-center gap-2 rounded-md border border-border px-4 py-2.5 text-sm font-medium transition-colors hover:bg-secondary">
-                  Try Another Simulation
-                  <lucide-icon [img]="ArrowRight" [size]="16"></lucide-icon>
-                </button>
+                  <!-- Score & Feedback -->
+                  <div class="rounded-xl border border-border bg-card p-6">
+                    <div class="flex flex-col items-center gap-4 sm:flex-row">
+                      <div class="flex shrink-0 flex-col items-center gap-1">
+                        <div class="flex h-20 w-20 items-center justify-center rounded-full border-4"
+                             [class]="result.similarityScore >= 70 ? 'border-accent text-accent' : result.similarityScore >= 40 ? 'border-orange-500 text-orange-500' : 'border-destructive text-destructive'">
+                          <span class="text-xl font-bold">{{ result.similarityScore }}%</span>
+                        </div>
+                        <span class="text-xs font-medium text-muted-foreground">Similarity</span>
+                      </div>
+                      <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                          <lucide-icon [img]="Lightbulb" [size]="18"
+                                       [class]="result.similarityScore >= 70 ? 'text-accent' : result.similarityScore >= 40 ? 'text-orange-500' : 'text-destructive'"></lucide-icon>
+                          <h4 class="font-semibold"
+                              [class]="result.similarityScore >= 70 ? 'text-accent' : result.similarityScore >= 40 ? 'text-orange-500' : 'text-destructive'">
+                            {{ result.similarityScore >= 70 ? 'Great Analysis!' : result.similarityScore >= 40 ? 'Good Effort' : 'Keep Learning' }}
+                          </h4>
+                        </div>
+                        <p class="mt-2 text-sm leading-relaxed text-muted-foreground">{{ result.feedback }}</p>
+                      </div>
+                    </div>
+                  </div>
+                }
               </div>
             </div>
           }
+
         }
       </main>
     </div>
@@ -452,19 +681,28 @@ export class EducationComponent {
   readonly showCompleted = signal(false);
   readonly activeQuiz = signal<Quiz | null>(null);
 
-  // Simulation state
-  readonly activeSimulation = signal<SimulationApiScenario | null>(null);
+  // Simulation view state
+  readonly simView = signal<'setup' | 'playing' | 'completed-list' | 'completed-detail'>('setup');
+  readonly selectedDifficulty = signal<'Beginner' | 'Intermediate' | 'Advanced' | null>(null);
+  readonly selectedSector = signal('All');
+
+  // Active session queue
+  readonly simulationQueue = signal<SimulationApiScenario[]>([]);
+  readonly currentSimIndex = signal(0);
+
+  // Per-simulation input/result state (reset between sims)
   readonly userPrediction = signal('');
   readonly simSubmitted = signal(false);
   readonly simSimilarity = signal(0);
   readonly simFeedback = signal('');
-  readonly simOurPrediction = signal('');
+  readonly simPredictions = signal<SimulationPrediction[]>([]);
   readonly submitting = signal(false);
-  readonly selectedPeriod = signal('All');
-  readonly showSimCompleted = signal(false);
 
-  // Completed simulations tracked locally for this session
-  readonly completedResults = signal(new Map<string, SimulationSubmitResult>());
+  // Completed simulation being reviewed
+  readonly viewingCompletedSim = signal<SimulationApiScenario | null>(null);
+
+  // Session-local completed results (stored with userPrediction for review)
+  readonly completedResults = signal(new Map<string, CompletedSimRecord>());
 
   readonly BookOpen = BookOpen;
   readonly Search = Search;
@@ -483,6 +721,7 @@ export class EducationComponent {
   readonly User = User;
   readonly FileText = FileText;
   readonly Loader2 = Loader2;
+  readonly SlidersHorizontal = SlidersHorizontal;
 
   // API-backed signals
   readonly glossaryTerms = toSignal(
@@ -500,9 +739,35 @@ export class EducationComponent {
     { initialValue: [] as SimulationApiScenario[] }
   );
 
-  readonly simulationPeriods = computed(() => {
-    const periods = [...new Set(this.simulations().map(s => s.period))].sort();
-    return ['All', ...periods];
+  // Derived: current simulation in the active session queue
+  readonly activeSimulation = computed<SimulationApiScenario | null>(() => {
+    const queue = this.simulationQueue();
+    const idx = this.currentSimIndex();
+    return queue[idx] ?? null;
+  });
+
+  // Derived: unique sectors across all simulations
+  readonly simulationSectors = computed(() => {
+    const sectors = [...new Set(this.simulations().map(s => s.sector))].sort();
+    return ['All', ...sectors];
+  });
+
+  // Derived: simulations matching the current difficulty/sector selection that aren't yet completed
+  readonly availableSimulations = computed(() => {
+    const difficulty = this.selectedDifficulty();
+    const sector = this.selectedSector();
+    const completedMap = this.completedResults();
+    return this.simulations().filter(s =>
+      !completedMap.has(s.id) &&
+      (!difficulty || s.difficulty === difficulty) &&
+      (sector === 'All' || s.sector === sector)
+    );
+  });
+
+  // Derived: simulations the user has completed this session
+  readonly completedSimulations = computed(() => {
+    const completedMap = this.completedResults();
+    return this.simulations().filter(s => completedMap.has(s.id));
   });
 
   readonly filteredTerms = computed(() => {
@@ -525,18 +790,9 @@ export class EducationComponent {
     return quiz.questions[idx];
   });
 
-  readonly filteredSimulations = computed(() => {
-    const period = this.selectedPeriod();
-    const completed = this.showSimCompleted();
-    const completedMap = this.completedResults();
-
-    return this.simulations().filter(s =>
-      completedMap.has(s.id) === completed &&
-      (period === 'All' || s.period === period)
-    );
-  });
-
   readonly isCorrect = computed(() => this.selectedAnswer() === this.currentQuestion().correctAnswer);
+
+  // ── Quiz methods ──────────────────────────────────────────────────────────
 
   selectQuiz(quiz: Quiz): void {
     this.activeQuiz.set(quiz);
@@ -563,20 +819,37 @@ export class EducationComponent {
     this.showResult.set(false);
   }
 
-  startSimulation(scenario: SimulationApiScenario): void {
-    this.activeSimulation.set(scenario);
-    this.userPrediction.set('');
-    this.simSubmitted.set(false);
-    this.simSimilarity.set(0);
-    this.simFeedback.set('');
-    this.simOurPrediction.set('');
+  // ── Simulation methods ────────────────────────────────────────────────────
+
+  startSession(): void {
+    const queue = this.availableSimulations();
+    if (!this.selectedDifficulty() || queue.length === 0) return;
+    this.simulationQueue.set([...queue]);
+    this.currentSimIndex.set(0);
+    this.resetSimState();
+    this.simView.set('playing');
   }
 
-  backToSimulations(): void {
-    this.activeSimulation.set(null);
-    this.simSubmitted.set(false);
-    this.userPrediction.set('');
-    this.simOurPrediction.set('');
+  nextSimulation(): void {
+    this.currentSimIndex.update(i => i + 1);
+    this.resetSimState();
+  }
+
+  backToSetup(): void {
+    this.simView.set('setup');
+    this.simulationQueue.set([]);
+    this.currentSimIndex.set(0);
+    this.resetSimState();
+  }
+
+  viewCompletedSim(scenario: SimulationApiScenario): void {
+    this.viewingCompletedSim.set(scenario);
+    this.simView.set('completed-detail');
+  }
+
+  backToCompletedList(): void {
+    this.viewingCompletedSim.set(null);
+    this.simView.set('completed-list');
   }
 
   submitPrediction(): void {
@@ -590,13 +863,18 @@ export class EducationComponent {
       next: (result) => {
         this.simSimilarity.set(result.similarityScore);
         this.simFeedback.set(result.feedback);
-        this.simOurPrediction.set(result.ourPrediction);
+        this.simPredictions.set(result.predictions);
         this.simSubmitted.set(true);
         this.submitting.set(false);
 
         this.completedResults.update(map => {
           const updated = new Map(map);
-          updated.set(scenario.id, result);
+          updated.set(scenario.id, {
+            userPrediction: prediction,
+            similarityScore: result.similarityScore,
+            feedback: result.feedback,
+            predictions: result.predictions,
+          });
           return updated;
         });
       },
@@ -605,6 +883,16 @@ export class EducationComponent {
       }
     });
   }
+
+  private resetSimState(): void {
+    this.userPrediction.set('');
+    this.simSubmitted.set(false);
+    this.simSimilarity.set(0);
+    this.simFeedback.set('');
+    this.simPredictions.set([]);
+  }
+
+  // ── Shared helpers ────────────────────────────────────────────────────────
 
   getOptionClass(index: number): string {
     if (this.showResult() && index === this.currentQuestion().correctAnswer) {
@@ -617,6 +905,36 @@ export class EducationComponent {
       return 'border-accent bg-accent/5';
     }
     return 'border-border hover:border-accent/50 hover:bg-secondary/50';
+  }
+
+  getPredictionDirectionClass(direction: string): string {
+    switch (direction) {
+      case 'BULLISH':  return 'bg-accent/20 text-accent';
+      case 'BEARISH':  return 'bg-destructive/20 text-destructive';
+      case 'NEUTRAL':  return 'bg-secondary text-secondary-foreground';
+      case 'MIXED':    return 'bg-yellow-500/20 text-yellow-600';
+      case 'VOLATILE': return 'bg-orange-500/20 text-orange-500';
+      default:         return 'bg-secondary text-secondary-foreground';
+    }
+  }
+
+  getPredictionScopeLabel(scope: string): string {
+    switch (scope) {
+      case 'COMPANY':      return 'Company';
+      case 'MULTI_TICKER': return 'Multi-Ticker';
+      case 'SECTOR':       return 'Sector';
+      case 'COUNTRY':      return 'Country';
+      default:             return scope;
+    }
+  }
+
+  getTimeHorizonLabel(timeHorizon: string): string {
+    switch (timeHorizon) {
+      case 'SHORT_TERM': return 'Short-term';
+      case 'MID_TERM':   return 'Mid-term';
+      case 'LONG_TERM':  return 'Long-term';
+      default:           return timeHorizon;
+    }
   }
 
   getDifficultyClass(difficulty: string): string {
