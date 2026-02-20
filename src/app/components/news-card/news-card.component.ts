@@ -39,15 +39,45 @@ import { NewsItem, Direction } from '../../models';
 
           <div class="flex flex-wrap gap-1.5">
             @for (company of news().companies; track company.ticker) {
-              <span class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium transition-all duration-150 hover:brightness-125 hover:shadow-sm"
-                    [class]="getDirectionClass(company.direction)"
-                    [class.border-dashed]="isSectorPrediction(company.ticker)">
-                @if (isSectorPrediction(company.ticker)) {
-                  <lucide-icon [img]="Globe" [size]="12"></lucide-icon>
+              <div class="relative"
+                   (mouseenter)="hoveredTicker.set(company.ticker)"
+                   (mouseleave)="hoveredTicker.set(null)">
+                <span class="inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium transition-all duration-150 hover:brightness-125 hover:shadow-sm"
+                      [class]="getDirectionClass(company.direction)"
+                      [class.border-dashed]="isSectorPrediction(company.ticker)"
+                      [routerLink]="isSectorPrediction(company.ticker) ? null : ['/companies', company.ticker]">
+                  @if (isSectorPrediction(company.ticker)) {
+                    <lucide-icon [img]="Globe" [size]="12"></lucide-icon>
+                  }
+                  {{ company.ticker }}
+                  <lucide-icon [img]="getDirectionIcon(company.direction)" [size]="12"></lucide-icon>
+                </span>
+                @if (hoveredTicker() === company.ticker && company.rationale) {
+                  <div class="pointer-events-none absolute bottom-full left-0 z-20 mb-2 w-64 rounded-xl border border-border bg-card p-3 shadow-xl">
+                    <div class="mb-2 flex items-center gap-2">
+                      <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-xs font-medium capitalize"
+                            [class]="getDirectionClass(company.direction)">
+                        {{ company.direction }}
+                        <lucide-icon [img]="getDirectionIcon(company.direction)" [size]="10"></lucide-icon>
+                      </span>
+                      @if (company.confidence != null) {
+                        <span class="text-xs text-muted-foreground">{{ company.confidence }}% confidence</span>
+                      }
+                    </div>
+                    @if (company.timeHorizon) {
+                      <p class="mb-1.5 text-xs font-medium text-muted-foreground">{{ formatTimeHorizon(company.timeHorizon) }}</p>
+                    }
+                    <p class="text-xs leading-relaxed text-foreground">{{ company.rationale }}</p>
+                    @if (company.evidence?.length) {
+                      <ul class="mt-2 space-y-1 border-t border-border pt-2">
+                        @for (item of company.evidence; track $index) {
+                          <li class="text-xs text-muted-foreground before:mr-1 before:content-['·']">{{ item }}</li>
+                        }
+                      </ul>
+                    }
+                  </div>
                 }
-                {{ company.ticker }}
-                <lucide-icon [img]="getDirectionIcon(company.direction)" [size]="12"></lucide-icon>
-              </span>
+              </div>
             }
           </div>
 
@@ -84,6 +114,7 @@ export class NewsCardComponent implements OnDestroy {
   readonly news = input.required<NewsItem>();
   readonly compact = input(false);
   readonly tooltipVisible = signal(false);
+  readonly hoveredTicker = signal<string | null>(null);
 
   readonly ExternalLink = ExternalLink;
   readonly Globe = Globe;
@@ -126,6 +157,10 @@ export class NewsCardComponent implements OnDestroy {
 
   isSectorPrediction(ticker: string): boolean {
     return ticker.includes(':');
+  }
+
+  formatTimeHorizon(th: string): string {
+    return th.split('_').map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(' ');
   }
 
   getSentimentClass(): string {

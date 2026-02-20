@@ -8,6 +8,10 @@ export type EventType = 'earnings' | 'economic' | 'dividend' | 'conference';
 export interface CompanyPrediction {
   ticker: string;
   direction: Direction;
+  rationale?: string;
+  timeHorizon?: string;
+  confidence?: number;
+  evidence?: string[];
 }
 
 export interface NewsItem {
@@ -81,6 +85,24 @@ export interface HeatmapSector {
   discussionVolume: number;
   companies: HeatmapCompany[];
   topics: string[];
+}
+
+export interface Company {
+  id: number;
+  ticker: string;
+  name: string;
+  exchange?: string;
+  logoUrl?: string;
+  websiteUrl?: string;
+  marketCap?: number; // in millions
+  country?: string;   // country code
+  sectors: string[];
+}
+
+export interface CompanyDetail extends Company {
+  countryName?: string;
+  description?: string;
+  ipoDate?: string;
 }
 
 export interface GlossaryTerm {

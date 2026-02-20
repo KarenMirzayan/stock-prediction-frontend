@@ -67,7 +67,7 @@ import { NewsItem } from '../../models';
                 }
               </div>
             } @else {
-              <div class="space-y-6">
+              <div class="space-y-4">
                 @for (news of newsList(); track news.id) {
                   <app-news-card [news]="news" />
                 }

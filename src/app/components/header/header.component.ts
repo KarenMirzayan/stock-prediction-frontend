@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, LayoutGrid, User, Menu, X, Home } from 'lucide-angular';
+import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, LayoutGrid, User, Menu, X, Home, Building2 } from 'lucide-angular';
 
 @Component({
   selector: 'app-header',
@@ -93,6 +93,7 @@ export class HeaderComponent {
   readonly navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'News', href: '/news', icon: Newspaper },
+    { name: 'Companies', href: '/companies', icon: Building2 },
     { name: 'Forecast Analytics', href: '/forecast', icon: TrendingUp },
     { name: 'Education', href: '/education', icon: GraduationCap },
     { name: 'Calendar', href: '/calendar', icon: Calendar },

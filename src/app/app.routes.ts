@@ -38,6 +38,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/profile/profile.component').then(m => m.ProfileComponent),
   },
   {
+    path: 'companies',
+    loadComponent: () => import('./pages/companies/companies.component').then(m => m.CompaniesComponent),
+  },
+  {
+    path: 'companies/:ticker',
+    loadComponent: () => import('./pages/company-detail/company-detail.component').then(m => m.CompanyDetailComponent),
+  },
+  {
     path: '**',
     redirectTo: '',
   },
