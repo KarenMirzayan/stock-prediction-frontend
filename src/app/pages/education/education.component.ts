@@ -369,12 +369,10 @@ interface CompletedSimRecord {
                       Based on this news, what do you think happened to the market and the affected companies? Describe the expected impact.
                     </p>
                     <div class="mt-4 flex flex-wrap gap-2">
-                      @if (activeSimulation()!.company) {
-                        <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                          {{ activeSimulation()!.company }}
-                        </span>
-                      }
-                      <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">
+                        {{ activeSimulation()!.difficulty }}
+                      </span>
+                      <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">
                         {{ activeSimulation()!.sector }}
                       </span>
                     </div>
