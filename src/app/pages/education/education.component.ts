@@ -6,7 +6,7 @@ import { HeaderComponent } from '../../components/header/header.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { EducationApiService } from '../../services/education-api.service';
 import { Quiz, GlossaryTerm, SimulationApiScenario, SimulationSubmitResult, SimulationPrediction } from '../../models';
-import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2, SlidersHorizontal } from 'lucide-angular';
+import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2 } from 'lucide-angular';
 
 interface CompletedSimRecord {
   userPrediction: string;
@@ -233,68 +233,61 @@ interface CompletedSimRecord {
                 </div>
               </div>
 
-              <!-- Difficulty selector + Start button -->
-              <div>
-                <p class="mb-3 text-sm font-medium">Select Difficulty</p>
-                <div class="flex flex-wrap items-center gap-3">
-                  <button (click)="selectedDifficulty.set('Beginner')"
-                          class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
-                          [class]="selectedDifficulty() === 'Beginner'
-                            ? 'bg-secondary text-secondary-foreground border-accent/50'
-                            : 'border-border hover:bg-secondary'">
-                    Beginner
-                  </button>
-                  <button (click)="selectedDifficulty.set('Intermediate')"
-                          class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
-                          [class]="selectedDifficulty() === 'Intermediate'
-                            ? 'bg-accent/10 text-accent border-accent'
-                            : 'border-border hover:bg-secondary'">
-                    Intermediate
-                  </button>
-                  <button (click)="selectedDifficulty.set('Advanced')"
-                          class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
-                          [class]="selectedDifficulty() === 'Advanced'
-                            ? 'bg-primary text-primary-foreground border-transparent'
-                            : 'border-border hover:bg-secondary'">
-                    Advanced
-                  </button>
-
-                  <button (click)="startSession()"
-                          [disabled]="!selectedDifficulty() || availableSimulations().length === 0"
-                          class="flex items-center gap-2 rounded-md bg-accent px-5 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
-                    <lucide-icon [img]="Play" [size]="16"></lucide-icon>
-                    Start
-                  </button>
-                </div>
-
-                @if (selectedDifficulty()) {
-                  <p class="mt-2 text-xs text-muted-foreground">
-                    {{ availableSimulations().length }}
-                    {{ availableSimulations().length === 1 ? 'simulation' : 'simulations' }} available
-                  </p>
-                }
-              </div>
-
-              <!-- Sector filter -->
-              @if (simulationSectors().length > 1) {
+              <!-- Sector + Difficulty selector + Start button -->
+              <div class="space-y-4">
                 <div>
-                  <div class="mb-2 flex items-center gap-2">
-                    <lucide-icon [img]="SlidersHorizontal" [size]="14" class="text-muted-foreground"></lucide-icon>
-                    <p class="text-sm text-muted-foreground">Filter by Sector</p>
-                  </div>
-                  <div class="flex flex-wrap gap-2">
-                    @for (sector of simulationSectors(); track sector) {
-                      <button (click)="selectedSector.set(sector)"
-                              class="rounded-md border px-3 py-1 text-xs font-medium transition-colors"
-                              [class]="selectedSector() === sector
-                                ? 'bg-secondary border-accent/50 font-semibold'
-                                : 'border-border hover:bg-secondary'">
-                        {{ sector }}
-                      </button>
-                    }
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">Sector</span>
+                    <select (change)="selectedSector.set($any($event.target).value)"
+                            class="rounded-md border border-border bg-background px-3 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-1 focus:ring-accent">
+                      @for (sector of simulationSectors(); track sector) {
+                        <option [value]="sector" [selected]="selectedSector() === sector">{{ sector }}</option>
+                      }
+                    </select>
                   </div>
                 </div>
-              }
+
+                <div>
+                  <p class="mb-3 text-sm font-medium">Difficulty</p>
+                  <div class="flex flex-wrap items-center gap-3">
+                    <button (click)="selectedDifficulty.set('Beginner')"
+                            class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+                            [class]="selectedDifficulty() === 'Beginner'
+                              ? 'bg-primary text-primary-foreground border-transparent'
+                              : 'border-border hover:bg-secondary'">
+                      Beginner
+                    </button>
+                    <button (click)="selectedDifficulty.set('Intermediate')"
+                            class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+                            [class]="selectedDifficulty() === 'Intermediate'
+                              ? 'bg-primary text-primary-foreground border-transparent'
+                              : 'border-border hover:bg-secondary'">
+                      Intermediate
+                    </button>
+                    <button (click)="selectedDifficulty.set('Advanced')"
+                            class="rounded-md border px-4 py-2 text-sm font-medium transition-colors"
+                            [class]="selectedDifficulty() === 'Advanced'
+                              ? 'bg-primary text-primary-foreground border-transparent'
+                              : 'border-border hover:bg-secondary'">
+                      Advanced
+                    </button>
+
+                    <button (click)="startSession()"
+                            [disabled]="!selectedDifficulty() || availableSimulations().length === 0"
+                            class="flex items-center gap-2 rounded-md bg-accent px-5 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-50">
+                      <lucide-icon [img]="Play" [size]="16"></lucide-icon>
+                      Start
+                    </button>
+                  </div>
+
+                  @if (selectedDifficulty()) {
+                    <p class="mt-2 text-xs text-muted-foreground">
+                      {{ availableSimulations().length }}
+                      {{ availableSimulations().length === 1 ? 'simulation' : 'simulations' }} available
+                    </p>
+                  }
+                </div>
+              </div>
 
             </div>
           }
@@ -375,6 +368,16 @@ interface CompletedSimRecord {
                     <p class="mt-1 text-sm text-muted-foreground">
                       Based on this news, what do you think happened to the market and the affected companies? Describe the expected impact.
                     </p>
+                    <div class="mt-4 flex flex-wrap gap-2">
+                      @if (activeSimulation()!.company) {
+                        <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                          {{ activeSimulation()!.company }}
+                        </span>
+                      }
+                      <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                        {{ activeSimulation()!.sector }}
+                      </span>
+                    </div>
                     <textarea
                       [ngModel]="userPrediction()"
                       (ngModelChange)="userPrediction.set($event)"
@@ -721,7 +724,6 @@ export class EducationComponent {
   readonly User = User;
   readonly FileText = FileText;
   readonly Loader2 = Loader2;
-  readonly SlidersHorizontal = SlidersHorizontal;
 
   // API-backed signals
   readonly glossaryTerms = toSignal(

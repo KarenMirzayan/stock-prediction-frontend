@@ -30,6 +30,7 @@ interface ApiSimulationScenario {
   newsContent: string;
   context: string;
   sector: string;
+  company?: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 

@@ -139,6 +139,7 @@ export interface SimulationScenario {
   newsContent: string;
   context: string;
   sector: string;
+  company?: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
   actualResult: string;
   completed: boolean;
@@ -155,6 +156,7 @@ export interface SimulationApiScenario {
   newsContent: string;
   context: string;
   sector: string;
+  company?: string;
   difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
 }
 
