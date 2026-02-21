@@ -7,7 +7,8 @@ import { EventsPreviewComponent } from '../../components/events-preview/events-p
 import { NewsCardComponent } from '../../components/news-card/news-card.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { NewsApiService } from '../../services/news-api.service';
-import { NewsItem } from '../../models';
+import { CalendarApiService } from '../../services/calendar-api.service';
+import { NewsItem, EventItem } from '../../models';
 
 @Component({
   selector: 'app-home',
@@ -79,7 +80,7 @@ import { NewsItem } from '../../models';
           </div>
 
           <div>
-            <app-events-preview [events]="mockData.homeEvents" />
+            <app-events-preview [events]="homeEvents()" />
           </div>
         </div>
       </main>
@@ -88,10 +89,12 @@ import { NewsItem } from '../../models';
 })
 export class HomeComponent implements OnInit {
   private readonly newsApi = inject(NewsApiService);
+  private readonly calendarApi = inject(CalendarApiService);
   readonly mockData = inject(MockDataService);
 
   readonly feedMode = signal<'all' | 'subscriptions'>('all');
   readonly newsList = signal<NewsItem[]>([]);
+  readonly homeEvents = signal<EventItem[]>([]);
   readonly loading = signal(true);
 
   ngOnInit(): void {
@@ -104,6 +107,11 @@ export class HomeComponent implements OnInit {
         this.newsList.set(this.mockData.homeNews);
         this.loading.set(false);
       },
+    });
+
+    this.calendarApi.getUpcoming(6).subscribe({
+      next: (events) => this.homeEvents.set(events.length ? events : this.mockData.homeEvents),
+      error: () => this.homeEvents.set(this.mockData.homeEvents),
     });
   }
 }

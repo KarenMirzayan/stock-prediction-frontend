@@ -1,7 +1,8 @@
-import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, computed, inject, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../components/header/header.component';
 import { MockDataService } from '../../services/mock-data.service';
+import { CalendarApiService } from '../../services/calendar-api.service';
 import { LucideAngularModule, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, Building2, X, ArrowRight, GripHorizontal } from 'lucide-angular';
 import { CalendarEvent, EventType, Relevance } from '../../models';
 
@@ -47,7 +48,7 @@ interface PinnedPopup {
             <select [ngModel]="selectedSector()" (ngModelChange)="selectedSector.set($event)"
                     class="cursor-pointer rounded-lg border border-input bg-card px-3 py-1.5 text-sm outline-none">
               <option value="">All Sectors</option>
-              @for (sector of data.calendarSectors; track sector) {
+              @for (sector of calendarSectors(); track sector) {
                 <option [value]="sector">{{ sector }}</option>
               }
             </select>
@@ -177,7 +178,7 @@ interface PinnedPopup {
               <h3 class="font-semibold">Upcoming Events</h3>
               <p class="mt-0.5 text-xs text-muted-foreground">From today onward</p>
             </div>
-            <div class="flex-1 overflow-y-auto divide-y divide-border">
+            <div class="flex-1 overflow-y-auto scrollbar-thin divide-y divide-border">
               @for (event of upcomingEvents(); track event.id) {
                 <div [id]="'upcoming-' + event.id"
                      class="p-4 transition-colors duration-300 hover:bg-secondary/50"
@@ -253,11 +254,13 @@ interface PinnedPopup {
   `,
 })
 export class CalendarComponent {
+  private readonly calendarApi = inject(CalendarApiService);
   readonly data = inject(MockDataService);
   readonly view = signal<'month' | 'week'>('month');
   readonly selectedType = signal('');
   readonly selectedSector = signal('');
   readonly currentDate = signal(new Date());
+  readonly allEvents = signal<CalendarEvent[]>([]);
 
   readonly pinnedPopups = signal<PinnedPopup[]>([]);
   readonly highlightedEventId = signal<string | null>(null);
@@ -273,7 +276,24 @@ export class CalendarComponent {
   readonly ArrowRight = ArrowRight;
   readonly GripHorizontal = GripHorizontal;
 
+  readonly calendarSectors = computed(() =>
+    [...new Set(this.allEvents().map(e => e.sector).filter(Boolean))].sort()
+  );
+
   readonly dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  constructor() {
+    effect(() => {
+      const d = this.currentDate();
+      const from = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+      const to = new Date(d.getFullYear(), d.getMonth() + 2, 0);
+      const fmt = (dt: Date) => dt.toISOString().slice(0, 10);
+      this.calendarApi.getByDateRange(fmt(from), fmt(to)).subscribe({
+        next: (events) => this.allEvents.set(events.length ? events : this.data.calendarEvents),
+        error: () => this.allEvents.set(this.data.calendarEvents),
+      });
+    });
+  }
 
   readonly daysInMonth = computed(() =>
     new Date(this.currentDate().getFullYear(), this.currentDate().getMonth() + 1, 0).getDate()
@@ -313,7 +333,7 @@ export class CalendarComponent {
   readonly filteredEvents = computed(() => {
     const type = this.selectedType();
     const sector = this.selectedSector();
-    return this.data.calendarEvents.filter(e => {
+    return this.allEvents().filter(e => {
       if (type && e.type !== type) return false;
       if (sector && e.sector !== sector) return false;
       return true;

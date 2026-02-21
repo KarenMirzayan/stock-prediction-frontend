@@ -28,7 +28,7 @@ import { NewsItem, Direction } from '../../models';
           </div>
 
           <a [routerLink]="['/news', news().id]" class="block">
-            <h3 class="line-clamp-2 text-lg font-semibold leading-tight transition-colors group-hover:text-accent">
+            <h3 class="line-clamp-2 min-h-[2lh] text-lg font-semibold leading-tight transition-colors group-hover:text-accent">
               {{ news().headline }}
             </h3>
           </a>

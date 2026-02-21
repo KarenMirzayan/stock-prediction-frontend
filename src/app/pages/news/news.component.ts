@@ -20,23 +20,23 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex rounded-lg border border-border bg-card p-1">
               <button (click)="feedMode.set('all')"
-                      class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
+                      class="cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
                       [class.bg-secondary]="feedMode() === 'all'">
                 All News
               </button>
               <button (click)="feedMode.set('subscriptions')"
-                      class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
+                      class="cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
                       [class.bg-secondary]="feedMode() === 'subscriptions'">
                 My Subscriptions
               </button>
             </div>
 
-            <div class="relative max-w-sm flex-1">
+            <div class="relative max-w-xs flex-1">
               <lucide-icon [img]="Search" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"></lucide-icon>
               <input type="text" placeholder="Search news..."
                      [ngModel]="searchQuery()"
                      (ngModelChange)="searchQuery.set($event)"
-                     class="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+                     class="w-full rounded-lg border border-input bg-card py-2 pl-11 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
             </div>
           </div>
 
@@ -47,7 +47,7 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
             </div>
 
             <select [ngModel]="selectedCompany()" (ngModelChange)="onCompanyChange($event)"
-                    class="rounded-lg border border-input bg-card px-3 py-1.5 text-sm outline-none">
+                    class="cursor-pointer rounded-lg border border-input bg-card px-3 py-1.5 text-sm outline-none">
               <option value="">Company</option>
               @for (company of mockData.filterCompanies; track company) {
                 <option [value]="company">{{ company }}</option>
@@ -55,7 +55,7 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
             </select>
 
             <select [ngModel]="selectedSector()" (ngModelChange)="onSectorChange($event)"
-                    class="rounded-lg border border-input bg-card px-3 py-1.5 text-sm outline-none">
+                    class="cursor-pointer rounded-lg border border-input bg-card px-3 py-1.5 text-sm outline-none">
               <option value="">Sector</option>
               @for (sector of mockData.filterSectors; track sector) {
                 <option [value]="sector">{{ sector }}</option>
@@ -63,7 +63,7 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
             </select>
 
             <select [ngModel]="selectedSentiment()" (ngModelChange)="onSentimentChange($event)"
-                    class="rounded-lg border border-input bg-card px-3 py-1.5 text-sm outline-none">
+                    class="cursor-pointer rounded-lg border border-input bg-card px-3 py-1.5 text-sm outline-none">
               <option value="">Sentiment</option>
               <option value="positive">Positive</option>
               <option value="negative">Negative</option>
@@ -82,7 +82,7 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
                 </span>
               }
               <button (click)="clearAllFilters()"
-                      class="text-xs text-muted-foreground hover:text-foreground">
+                      class="cursor-pointer text-xs text-muted-foreground hover:text-foreground">
                 Clear all
               </button>
             </div>
@@ -117,7 +117,7 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
             <div class="mt-8 flex items-center justify-center gap-2">
               <button (click)="goToPage(currentPage() - 1)"
                       [disabled]="currentPage() === 0"
-                      class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none">
+                      class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none">
                 <lucide-icon [img]="ChevronLeft" [size]="16"></lucide-icon>
                 Previous
               </button>
@@ -126,7 +126,7 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
               </span>
               <button (click)="goToPage(currentPage() + 1)"
                       [disabled]="currentPage() >= totalPages() - 1"
-                      class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none">
+                      class="inline-flex cursor-pointer items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm transition-colors hover:bg-secondary disabled:opacity-40 disabled:pointer-events-none">
                 Next
                 <lucide-icon [img]="ChevronRight" [size]="16"></lucide-icon>
               </button>
@@ -207,7 +207,7 @@ export class NewsComponent implements OnInit {
     this.selectedSentiment.set('');
     this.currentPage.set(0);
     this.updateFilters();
-    if (value) this.loadNews();
+    this.loadNews();
   }
 
   onSectorChange(value: string): void {
@@ -216,7 +216,7 @@ export class NewsComponent implements OnInit {
     this.selectedSentiment.set('');
     this.currentPage.set(0);
     this.updateFilters();
-    if (value) this.loadNews();
+    this.loadNews();
   }
 
   onSentimentChange(value: string): void {
@@ -225,7 +225,7 @@ export class NewsComponent implements OnInit {
     this.selectedSector.set('');
     this.currentPage.set(0);
     this.updateFilters();
-    if (value) this.loadNews();
+    this.loadNews();
   }
 
   removeFilter(filter: string): void {

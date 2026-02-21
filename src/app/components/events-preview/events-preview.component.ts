@@ -58,10 +58,16 @@ export class EventsPreviewComponent {
   readonly ArrowRight = ArrowRight;
 
   getMonth(date: string): string {
+    if (date.includes('-')) {
+      return new Date(date + 'T00:00:00').toLocaleString('en-US', { month: 'short' });
+    }
     return date.split(' ')[0];
   }
 
   getDay(date: string): string {
+    if (date.includes('-')) {
+      return String(new Date(date + 'T00:00:00').getDate());
+    }
     return date.split(' ')[1];
   }
 
