@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, signal, inject, OnInit, effect } from '@angular/core';
+import { Router } from '@angular/router';
 import { HeaderComponent } from '../../components/header/header.component';
 import { MarketIndicatorComponent } from '../../components/market-indicator/market-indicator.component';
 import { SentimentGaugeComponent } from '../../components/sentiment-gauge/sentiment-gauge.component';
@@ -8,6 +9,7 @@ import { NewsCardComponent } from '../../components/news-card/news-card.componen
 import { MockDataService } from '../../services/mock-data.service';
 import { NewsApiService } from '../../services/news-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';
+import { AuthService } from '../../services/auth.service';
 import { NewsItem, EventItem } from '../../models';
 
 @Component({
@@ -40,13 +42,13 @@ import { NewsItem, EventItem } from '../../models';
             <div class="mb-4 flex items-center justify-between">
               <h2 class="text-xl font-semibold">Key News</h2>
               <div class="flex rounded-lg border border-border bg-card p-1">
-                <button (click)="feedMode.set('all')"
-                        class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
+                <button (click)="onFeedModeChange('all')"
+                        class="cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
                         [class.bg-secondary]="feedMode() === 'all'">
                   All News
                 </button>
-                <button (click)="feedMode.set('subscriptions')"
-                        class="rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
+                <button (click)="onFeedModeChange('subscriptions')"
+                        class="cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
                         [class.bg-secondary]="feedMode() === 'subscriptions'">
                   My Subscriptions
                 </button>
@@ -73,7 +75,9 @@ import { NewsItem, EventItem } from '../../models';
                   <app-news-card [news]="news" />
                 }
                 @empty {
-                  <p class="py-8 text-center text-muted-foreground">No news articles available yet.</p>
+                  <p class="py-8 text-center text-muted-foreground">
+                    {{ feedMode() === 'subscriptions' ? 'No news for your subscribed companies.' : 'No news articles available yet.' }}
+                  </p>
                 }
               </div>
             }
@@ -90,21 +94,39 @@ import { NewsItem, EventItem } from '../../models';
 export class HomeComponent implements OnInit {
   private readonly newsApi = inject(NewsApiService);
   private readonly calendarApi = inject(CalendarApiService);
+  private readonly router = inject(Router);
   readonly mockData = inject(MockDataService);
+  readonly auth = inject(AuthService);
 
   readonly feedMode = signal<'all' | 'subscriptions'>('all');
   readonly newsList = signal<NewsItem[]>([]);
+  private allNews = signal<NewsItem[]>([]);
   readonly homeEvents = signal<EventItem[]>([]);
   readonly loading = signal(true);
 
+  constructor() {
+    effect(() => {
+      const mode = this.feedMode();
+      const all = this.allNews();
+      if (mode === 'subscriptions') {
+        const tickers = this.auth.subscribedTickers();
+        this.newsList.set(all.filter(n =>
+          n.companies.some(c => tickers.has(c.ticker))
+        ));
+      } else {
+        this.newsList.set(all);
+      }
+    });
+  }
+
   ngOnInit(): void {
-    this.newsApi.getLatestNews(0, 4).subscribe({
+    this.newsApi.getLatestNews(0, 20).subscribe({
       next: (page) => {
-        this.newsList.set(page.content);
+        this.allNews.set(page.content);
         this.loading.set(false);
       },
       error: () => {
-        this.newsList.set(this.mockData.homeNews);
+        this.allNews.set(this.mockData.homeNews);
         this.loading.set(false);
       },
     });
@@ -113,5 +135,13 @@ export class HomeComponent implements OnInit {
       next: (events) => this.homeEvents.set(events.length ? events : this.mockData.homeEvents),
       error: () => this.homeEvents.set(this.mockData.homeEvents),
     });
+  }
+
+  onFeedModeChange(mode: 'all' | 'subscriptions'): void {
+    if (mode === 'subscriptions' && !this.auth.isLoggedIn()) {
+      this.router.navigate(['/register']);
+      return;
+    }
+    this.feedMode.set(mode);
   }
 }

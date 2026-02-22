@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, Router } from '@angular/router';
-import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, LayoutGrid, User, Menu, X, Home, Building2 } from 'lucide-angular';
+import { RouterLink, RouterLinkActive } from '@angular/router';
+import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, LayoutGrid, User, Menu, X, Home, Building2, LogOut, UserPlus } from 'lucide-angular';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -30,25 +31,45 @@ import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, La
           </nav>
         </div>
 
-        <div class="flex items-center gap-4">
-          <div class="relative">
-            <button (click)="userMenuOpen.set(!userMenuOpen())"
-                    class="rounded-full p-2 transition-colors hover:bg-secondary"
-                    aria-label="User menu">
-              <lucide-icon [img]="User" [size]="20"></lucide-icon>
-            </button>
-            @if (userMenuOpen()) {
-              <div class="absolute right-0 top-full mt-1 w-48 rounded-lg border border-border bg-card p-1 shadow-lg">
-                <a routerLink="/profile" (click)="userMenuOpen.set(false)"
-                   class="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary">Profile</a>
-                <a routerLink="/profile" fragment="subscriptions" (click)="userMenuOpen.set(false)"
-                   class="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary">My Subscriptions</a>
-                <button class="block w-full rounded-md px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-secondary">
-                  Sign Out
-                </button>
-              </div>
-            }
-          </div>
+        <div class="flex items-center gap-3">
+          @if (auth.isLoggedIn()) {
+            <div class="relative">
+              <button (click)="userMenuOpen.set(!userMenuOpen())"
+                      class="flex items-center gap-2 rounded-full p-2 transition-colors hover:bg-secondary"
+                      aria-label="User menu">
+                <div class="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                  {{ userInitials() }}
+                </div>
+              </button>
+              @if (userMenuOpen()) {
+                <div class="absolute right-0 top-full mt-1 w-48 rounded-lg border border-border bg-card p-1 shadow-lg">
+                  <div class="border-b border-border px-3 py-2">
+                    <p class="text-sm font-medium">{{ auth.user()?.firstName || auth.user()?.username }}</p>
+                    <p class="text-xs text-muted-foreground">&#64;{{ auth.user()?.username }}</p>
+                  </div>
+                  <a routerLink="/profile" (click)="userMenuOpen.set(false)"
+                     class="mt-1 block rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary">Profile</a>
+                  <a routerLink="/profile" fragment="subscriptions" (click)="userMenuOpen.set(false)"
+                     class="block rounded-md px-3 py-2 text-sm transition-colors hover:bg-secondary">My Subscriptions</a>
+                  <button (click)="onSignOut()"
+                          class="mt-1 flex w-full items-center gap-2 rounded-md border-t border-border px-3 py-2 text-left text-sm text-destructive transition-colors hover:bg-secondary">
+                    <lucide-icon [img]="LogOut" [size]="14"></lucide-icon>
+                    Sign Out
+                  </button>
+                </div>
+              }
+            </div>
+          } @else {
+            <a routerLink="/register"
+               class="hidden items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90 sm:inline-flex">
+              <lucide-icon [img]="UserPlus" [size]="16"></lucide-icon>
+              Sign Up
+            </a>
+            <a routerLink="/login"
+               class="rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary">
+              Sign In
+            </a>
+          }
 
           <button (click)="mobileMenuOpen.set(!mobileMenuOpen())"
                   class="rounded-md p-2 transition-colors hover:bg-secondary md:hidden"
@@ -75,6 +96,13 @@ import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, La
                 {{ item.name }}
               </a>
             }
+            @if (!auth.isLoggedIn()) {
+              <a routerLink="/register" (click)="mobileMenuOpen.set(false)"
+                 class="mt-2 flex items-center gap-3 rounded-md bg-accent px-3 py-2.5 text-sm font-medium text-accent-foreground">
+                <lucide-icon [img]="UserPlus" [size]="16"></lucide-icon>
+                Sign Up
+              </a>
+            }
           </nav>
         </div>
       }
@@ -82,6 +110,8 @@ import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, La
   `,
 })
 export class HeaderComponent {
+  readonly auth = inject(AuthService);
+
   readonly mobileMenuOpen = signal(false);
   readonly userMenuOpen = signal(false);
 
@@ -89,6 +119,8 @@ export class HeaderComponent {
   readonly User = User;
   readonly Menu = Menu;
   readonly X = X;
+  readonly LogOut = LogOut;
+  readonly UserPlus = UserPlus;
 
   readonly navigation = [
     { name: 'Home', href: '/', icon: Home },
@@ -99,4 +131,16 @@ export class HeaderComponent {
     { name: 'Calendar', href: '/calendar', icon: Calendar },
     { name: 'Heatmap', href: '/heatmap', icon: LayoutGrid },
   ];
+
+  userInitials(): string {
+    const u = this.auth.user();
+    if (!u) return '?';
+    if (u.firstName && u.lastName) return (u.firstName[0] + u.lastName[0]).toUpperCase();
+    return u.username.slice(0, 2).toUpperCase();
+  }
+
+  onSignOut(): void {
+    this.userMenuOpen.set(false);
+    this.auth.logout();
+  }
 }

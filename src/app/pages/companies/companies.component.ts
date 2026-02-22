@@ -1,10 +1,11 @@
 import { Component, ChangeDetectionStrategy, signal, inject, OnInit, computed } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../components/header/header.component';
 import { CompanyApiService } from '../../services/company-api.service';
+import { AuthService } from '../../services/auth.service';
 import { Company } from '../../models';
-import { LucideAngularModule, Search, Building2, ExternalLink } from 'lucide-angular';
+import { LucideAngularModule, Search, Building2, ExternalLink, Bell, BellOff } from 'lucide-angular';
 
 @Component({
   selector: 'app-companies',
@@ -49,58 +50,63 @@ import { LucideAngularModule, Search, Building2, ExternalLink } from 'lucide-ang
         } @else {
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             @for (company of filteredCompanies(); track company.ticker) {
-              <a [routerLink]="['/companies', company.ticker]"
-                 class="group rounded-xl border border-border bg-card p-4 transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5">
-                <div class="mb-3 flex items-start gap-3">
-                  <!-- Logo / initials -->
-                  @if (company.logoUrl && !logoErrors().has(company.ticker)) {
-                    <img [src]="company.logoUrl" [alt]="company.name"
-                         (error)="onLogoError(company.ticker)"
-                         class="h-10 w-10 flex-shrink-0 rounded-lg bg-white object-contain p-0.5" />
-                  } @else {
-                    <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent/20 text-sm font-bold text-accent">
-                      {{ company.ticker.slice(0, 2) }}
-                    </div>
-                  }
+              <div class="group relative rounded-xl border border-border bg-card p-4 transition-all hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5">
+                <a [routerLink]="['/companies', company.ticker]" class="block">
+                  <div class="mb-3 flex items-start gap-3">
+                    @if (company.logoUrl && !logoErrors().has(company.ticker)) {
+                      <img [src]="company.logoUrl" [alt]="company.name"
+                           (error)="onLogoError(company.ticker)"
+                           class="h-10 w-10 flex-shrink-0 rounded-lg bg-white object-contain p-0.5" />
+                    } @else {
+                      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-accent/20 text-sm font-bold text-accent">
+                        {{ company.ticker.slice(0, 2) }}
+                      </div>
+                    }
 
-                  <!-- Name + ticker -->
-                  <div class="min-w-0 flex-1">
-                    <div class="flex items-center gap-1.5">
-                      <span class="font-mono text-sm font-bold text-accent">{{ company.ticker }}</span>
-                      @if (company.exchange) {
-                        <span class="rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground">
-                          {{ company.exchange }}
-                        </span>
-                      }
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5">
+                        <span class="font-mono text-sm font-bold text-accent">{{ company.ticker }}</span>
+                        @if (company.exchange) {
+                          <span class="rounded border border-border px-1 py-0.5 text-[10px] text-muted-foreground">
+                            {{ company.exchange }}
+                          </span>
+                        }
+                        @if (company.marketCap) {
+                          <span class="text-xs text-muted-foreground">
+                            {{ formatMarketCap(company.marketCap) }}
+                          </span>
+                        }
+                      </div>
+                      <p class="line-clamp-1 text-sm font-medium text-foreground transition-colors group-hover:text-accent">
+                        {{ company.name }}
+                      </p>
                     </div>
-                    <p class="line-clamp-1 text-sm font-medium text-foreground transition-colors group-hover:text-accent">
-                      {{ company.name }}
-                    </p>
                   </div>
 
-                  <!-- Market cap -->
-                  @if (company.marketCap) {
-                    <span class="flex-shrink-0 text-xs text-muted-foreground">
-                      {{ formatMarketCap(company.marketCap) }}
-                    </span>
-                  }
-                </div>
+                  <div class="flex flex-wrap items-center gap-1.5">
+                    @for (sector of company.sectors.slice(0, 3); track sector) {
+                      <span class="rounded-md border border-border bg-secondary/50 px-1.5 py-0.5 text-xs text-muted-foreground">
+                        {{ sector }}
+                      </span>
+                    }
+                    @if (company.sectors.length > 3) {
+                      <span class="text-xs text-muted-foreground">+{{ company.sectors.length - 3 }}</span>
+                    }
+                    @if (company.country) {
+                      <span class="ml-auto text-xs font-medium text-muted-foreground">{{ company.country }}</span>
+                    }
+                  </div>
+                </a>
 
-                <!-- Sectors + country -->
-                <div class="flex flex-wrap items-center gap-1.5">
-                  @for (sector of company.sectors.slice(0, 3); track sector) {
-                    <span class="rounded-md border border-border bg-secondary/50 px-1.5 py-0.5 text-xs text-muted-foreground">
-                      {{ sector }}
-                    </span>
-                  }
-                  @if (company.sectors.length > 3) {
-                    <span class="text-xs text-muted-foreground">+{{ company.sectors.length - 3 }}</span>
-                  }
-                  @if (company.country) {
-                    <span class="ml-auto text-xs font-medium text-muted-foreground">{{ company.country }}</span>
-                  }
-                </div>
-              </a>
+                <!-- Subscribe button -->
+                <button (click)="toggleSubscription($event, company)"
+                        [class]="auth.isSubscribed(company.id)
+                          ? 'absolute right-3 top-3 z-10 cursor-pointer rounded-md border border-accent/30 bg-accent/10 p-1.5 text-accent transition-colors hover:bg-accent/20'
+                          : 'absolute right-3 top-3 z-10 cursor-pointer rounded-md border border-border p-1.5 text-muted-foreground opacity-0 transition-all hover:border-accent/30 hover:text-accent group-hover:opacity-100'"
+                        [attr.aria-label]="auth.isSubscribed(company.id) ? 'Unsubscribe' : 'Subscribe'">
+                  <lucide-icon [img]="auth.isSubscribed(company.id) ? Bell : BellOff" [size]="14"></lucide-icon>
+                </button>
+              </div>
             }
 
             @empty {
@@ -116,10 +122,14 @@ import { LucideAngularModule, Search, Building2, ExternalLink } from 'lucide-ang
 })
 export class CompaniesComponent implements OnInit {
   private readonly companyApi = inject(CompanyApiService);
+  private readonly router = inject(Router);
+  readonly auth = inject(AuthService);
 
   readonly Search = Search;
   readonly Building2 = Building2;
   readonly ExternalLink = ExternalLink;
+  readonly Bell = Bell;
+  readonly BellOff = BellOff;
 
   readonly skeletons = [1, 2, 3, 4, 5, 6];
   readonly loading = signal(true);
@@ -148,6 +158,22 @@ export class CompaniesComponent implements OnInit {
         this.logosReady.set(true);
       },
     });
+  }
+
+  toggleSubscription(event: Event, company: Company): void {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!this.auth.isLoggedIn()) {
+      this.router.navigate(['/register']);
+      return;
+    }
+
+    if (this.auth.isSubscribed(company.id)) {
+      this.auth.unsubscribe(company.id).subscribe();
+    } else {
+      this.auth.subscribe(company.id).subscribe();
+    }
   }
 
   private preloadLogos(companies: Company[]): void {

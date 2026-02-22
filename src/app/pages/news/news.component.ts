@@ -1,9 +1,11 @@
 import { Component, ChangeDetectionStrategy, signal, inject, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../components/header/header.component';
 import { NewsCardComponent } from '../../components/news-card/news-card.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { NewsApiService } from '../../services/news-api.service';
+import { AuthService } from '../../services/auth.service';
 import { NewsItem } from '../../models';
 import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } from 'lucide-angular';
 
@@ -19,12 +21,12 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
         <div class="mb-6 space-y-4">
           <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div class="flex rounded-lg border border-border bg-card p-1">
-              <button (click)="feedMode.set('all')"
+              <button (click)="onFeedModeChange('all')"
                       class="cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
                       [class.bg-secondary]="feedMode() === 'all'">
                 All News
               </button>
-              <button (click)="feedMode.set('subscriptions')"
+              <button (click)="onFeedModeChange('subscriptions')"
                       class="cursor-pointer rounded-md px-4 py-1.5 text-sm font-medium transition-colors hover:bg-secondary"
                       [class.bg-secondary]="feedMode() === 'subscriptions'">
                 My Subscriptions
@@ -139,7 +141,9 @@ import { LucideAngularModule, Search, Filter, X, ChevronLeft, ChevronRight } fro
 })
 export class NewsComponent implements OnInit {
   private readonly newsApi = inject(NewsApiService);
+  private readonly router = inject(Router);
   readonly mockData = inject(MockDataService);
+  readonly auth = inject(AuthService);
 
   readonly feedMode = signal<'all' | 'subscriptions'>('all');
   readonly searchQuery = signal('');
@@ -149,9 +153,11 @@ export class NewsComponent implements OnInit {
   readonly activeFilters = signal<string[]>([]);
 
   readonly newsList = signal<NewsItem[]>([]);
+  private subscriptionNews = signal<NewsItem[]>([]);
   readonly loading = signal(true);
   readonly currentPage = signal(0);
   readonly totalPages = signal(0);
+  private readonly pageSize = 10;
 
   readonly Search = Search;
   readonly Filter = Filter;
@@ -161,6 +167,20 @@ export class NewsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadNews();
+  }
+
+  onFeedModeChange(mode: 'all' | 'subscriptions'): void {
+    if (mode === 'subscriptions' && !this.auth.isLoggedIn()) {
+      this.router.navigate(['/register']);
+      return;
+    }
+    this.feedMode.set(mode);
+    this.currentPage.set(0);
+    if (mode === 'subscriptions') {
+      this.loadSubscriptionNews();
+    } else {
+      this.loadNews();
+    }
   }
 
   loadNews(): void {
@@ -196,9 +216,39 @@ export class NewsComponent implements OnInit {
     });
   }
 
+  private loadSubscriptionNews(): void {
+    this.loading.set(true);
+    this.newsApi.getLatestNews(0, 200).subscribe({
+      next: (result) => {
+        const tickers = this.auth.subscribedTickers();
+        const filtered = result.content.filter(n =>
+          n.companies.some(c => tickers.has(c.ticker))
+        );
+        this.subscriptionNews.set(filtered);
+        this.totalPages.set(Math.max(1, Math.ceil(filtered.length / this.pageSize)));
+        this.paginateSubscriptions();
+        this.loading.set(false);
+      },
+      error: () => {
+        this.newsList.set([]);
+        this.totalPages.set(1);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  private paginateSubscriptions(): void {
+    const start = this.currentPage() * this.pageSize;
+    this.newsList.set(this.subscriptionNews().slice(start, start + this.pageSize));
+  }
+
   goToPage(page: number): void {
     this.currentPage.set(page);
-    this.loadNews();
+    if (this.feedMode() === 'subscriptions') {
+      this.paginateSubscriptions();
+    } else {
+      this.loadNews();
+    }
   }
 
   onCompanyChange(value: string): void {

@@ -204,3 +204,36 @@ export interface ForecastStats {
   declineForecasts: number;
   stagnationForecasts: number;
 }
+
+// Auth models
+export type UserRole = 'USER' | 'ADMIN';
+
+export interface UserProfile {
+  id: number;
+  username: string;
+  firstName: string | null;
+  lastName: string | null;
+  avatarUrl: string | null;
+  role: UserRole;
+  createdAt: string;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
+  expiresIn: number;
+  user: UserProfile;
+}
+
+export interface RegisterRequest {
+  username: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}

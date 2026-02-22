@@ -1,11 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../components/header/header.component';
 import { NewsCardComponent } from '../../components/news-card/news-card.component';
 import { CompanyApiService } from '../../services/company-api.service';
 import { NewsApiService } from '../../services/news-api.service';
+import { AuthService } from '../../services/auth.service';
 import { CompanyDetail, NewsItem } from '../../models';
-import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calendar, BarChart2 } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calendar, BarChart2, Bell, BellOff } from 'lucide-angular';
 
 @Component({
   selector: 'app-company-detail',
@@ -86,6 +87,15 @@ import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calend
                     </a>
                   }
                 </div>
+
+                <!-- Subscribe button -->
+                <button (click)="toggleSubscription()"
+                        [class]="auth.isSubscribed(company()!.id)
+                          ? 'inline-flex flex-shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/20'
+                          : 'inline-flex flex-shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent/30 hover:text-accent'">
+                  <lucide-icon [img]="auth.isSubscribed(company()!.id) ? Bell : BellOff" [size]="16"></lucide-icon>
+                  {{ auth.isSubscribed(company()!.id) ? 'Subscribed' : 'Subscribe' }}
+                </button>
               </div>
             </div>
 
@@ -174,8 +184,10 @@ import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calend
 })
 export class CompanyDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly companyApi = inject(CompanyApiService);
   private readonly newsApi = inject(NewsApiService);
+  readonly auth = inject(AuthService);
 
   readonly ArrowLeft = ArrowLeft;
   readonly ExternalLink = ExternalLink;
@@ -183,6 +195,8 @@ export class CompanyDetailComponent implements OnInit {
   readonly TrendingUp = TrendingUp;
   readonly Calendar = Calendar;
   readonly BarChart2 = BarChart2;
+  readonly Bell = Bell;
+  readonly BellOff = BellOff;
 
   readonly loading = signal(true);
   readonly logoReady = signal(false);
@@ -215,6 +229,22 @@ export class CompanyDetailComponent implements OnInit {
         this.newsLoading.set(false);
       },
     });
+  }
+
+  toggleSubscription(): void {
+    const c = this.company();
+    if (!c) return;
+
+    if (!this.auth.isLoggedIn()) {
+      this.router.navigate(['/register']);
+      return;
+    }
+
+    if (this.auth.isSubscribed(c.id)) {
+      this.auth.unsubscribe(c.id).subscribe();
+    } else {
+      this.auth.subscribe(c.id).subscribe();
+    }
   }
 
   private loadNews(ticker: string): void {
