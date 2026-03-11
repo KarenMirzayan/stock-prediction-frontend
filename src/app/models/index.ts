@@ -216,6 +216,13 @@ export interface UserProfile {
   avatarUrl: string | null;
   role: UserRole;
   createdAt: string;
+  telegramLinked: boolean;
+  telegramUsername: string | null;
+}
+
+export interface TelegramLinkResponse {
+  linkUrl: string;
+  expiresAt: string;
 }
 
 export interface AuthResponse {
