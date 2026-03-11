@@ -3,8 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../components/header/header.component';
 import { AuthService } from '../../services/auth.service';
-import { Company, UserProfile } from '../../models';
-import { LucideAngularModule, User, Building2, Bell, Trash2, Settings, LogOut } from 'lucide-angular';
+import { Company, TelegramLinkResponse } from '../../models';
+import { LucideAngularModule, User, Building2, Bell, Trash2, Settings, LogOut, Send, Link, Link2Off } from 'lucide-angular';
 
 @Component({
   selector: 'app-profile',
@@ -155,6 +155,53 @@ import { LucideAngularModule, User, Building2, Bell, Trash2, Settings, LogOut } 
                     <span class="rounded-md border border-border px-2 py-0.5 text-xs">{{ auth.user()?.role }}</span>
                   </div>
                 </div>
+
+                <div class="border-t border-border"></div>
+
+                <!-- Telegram -->
+                <div>
+                  <div class="mb-2 flex items-center gap-2">
+                    <lucide-icon [img]="Send" [size]="16" class="text-accent"></lucide-icon>
+                    <span class="text-sm font-medium">Telegram</span>
+                  </div>
+
+                  @if (auth.user()?.telegramLinked) {
+                    <div class="mb-3 flex items-center gap-2 rounded-lg bg-accent/10 px-3 py-2 text-sm">
+                      <lucide-icon [img]="Link" [size]="14" class="text-accent"></lucide-icon>
+                      <span class="text-accent">&#64;{{ auth.user()?.telegramUsername }}</span>
+                    </div>
+                    <button (click)="disconnectTelegram()"
+                            [disabled]="telegramLoading()"
+                            class="flex w-full items-center justify-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs font-medium text-destructive transition-colors hover:bg-destructive/10 disabled:opacity-50">
+                      <lucide-icon [img]="LinkOff" [size]="13"></lucide-icon>
+                      Disconnect Telegram
+                    </button>
+                  } @else {
+                    <p class="mb-3 text-xs text-muted-foreground">Connect Telegram to receive news notifications.</p>
+                    @if (telegramLinkUrl()) {
+                      <a [href]="telegramLinkUrl()!" target="_blank"
+                         class="flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-3 py-2 text-xs font-medium text-accent-foreground transition-colors hover:bg-accent/90">
+                        <lucide-icon [img]="Send" [size]="13"></lucide-icon>
+                        Open Telegram Bot
+                      </a>
+                      <p class="mt-1.5 text-center text-xs text-muted-foreground">Link expires in 15 min. Reload page after connecting.</p>
+                    } @else {
+                      <button (click)="connectTelegram()"
+                              [disabled]="telegramLoading()"
+                              class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-3 py-2 text-xs font-medium transition-colors hover:bg-secondary/80 disabled:opacity-50">
+                        @if (telegramLoading()) {
+                          <div class="h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-muted-foreground"></div>
+                        } @else {
+                          <lucide-icon [img]="Send" [size]="13"></lucide-icon>
+                        }
+                        Connect Telegram
+                      </button>
+                    }
+                    @if (telegramError()) {
+                      <p class="mt-1.5 text-center text-xs text-destructive">{{ telegramError() }}</p>
+                    }
+                  }
+                </div>
               </div>
             </div>
 
@@ -183,12 +230,19 @@ export class ProfileComponent implements OnInit {
     earningsReports: true,
   });
 
+  readonly telegramLoading = signal(false);
+  readonly telegramLinkUrl = signal<string | null>(null);
+  readonly telegramError = signal('');
+
   readonly User = User;
   readonly Building2 = Building2;
   readonly Bell = Bell;
   readonly Trash2 = Trash2;
   readonly Settings = Settings;
   readonly LogOut = LogOut;
+  readonly Send = Send;
+  readonly Link = Link;
+  readonly LinkOff = Link2Off;
 
   readonly notificationItems = [
     { key: 'breakingNews', label: 'Breaking News', description: 'Get notified immediately for major market events' },
@@ -231,6 +285,32 @@ export class ProfileComponent implements OnInit {
 
   toggleNotification(key: string): void {
     this.notifications.update(n => ({ ...n, [key]: !n[key] }));
+  }
+
+  connectTelegram(): void {
+    this.telegramError.set('');
+    this.telegramLoading.set(true);
+    this.auth.linkTelegram().subscribe({
+      next: (res: TelegramLinkResponse) => {
+        this.telegramLinkUrl.set(res.linkUrl);
+        this.telegramLoading.set(false);
+      },
+      error: () => {
+        this.telegramError.set('Could not generate link. Please try again.');
+        this.telegramLoading.set(false);
+      },
+    });
+  }
+
+  disconnectTelegram(): void {
+    this.telegramLoading.set(true);
+    this.auth.unlinkTelegram().subscribe({
+      next: () => {
+        this.telegramLoading.set(false);
+        this.auth.loadProfile();
+      },
+      error: () => this.telegramLoading.set(false),
+    });
   }
 
   private loadSubscriptions(): void {

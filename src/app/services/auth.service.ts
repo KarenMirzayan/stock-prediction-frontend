@@ -2,7 +2,7 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { tap, catchError, of, Observable } from 'rxjs';
-import { AuthResponse, LoginRequest, RegisterRequest, UserProfile, Company } from '../models';
+import { AuthResponse, LoginRequest, RegisterRequest, UserProfile, Company, TelegramLinkResponse } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -94,6 +94,19 @@ export class AuthService {
         this._subscriptions.update(s => new Set([...s, companyId]));
         localStorage.setItem('subscriptions', JSON.stringify([...this._subscriptions()]));
         this.fetchSubscriptions();
+      })
+    );
+  }
+
+  linkTelegram(): Observable<TelegramLinkResponse> {
+    return this.http.post<TelegramLinkResponse>(`${this.baseUrl}/users/me/telegram/link`, {});
+  }
+
+  unlinkTelegram(): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/users/me/telegram/unlink`).pipe(
+      tap(() => {
+        this._user.update(u => u ? { ...u, telegramLinked: false, telegramUsername: null } : null);
+        localStorage.setItem('user', JSON.stringify(this._user()));
       })
     );
   }
