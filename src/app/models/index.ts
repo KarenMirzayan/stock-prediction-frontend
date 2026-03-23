@@ -33,6 +33,7 @@ export interface NewsDetail extends NewsItem {
 }
 
 export interface PredictionDetail {
+  id: number;
   scope: string;
   direction: string;
   timeHorizon: string;
@@ -106,6 +107,7 @@ export interface CompanyDetail extends Company {
 }
 
 export interface GlossaryTerm {
+  id: number;
   term: string;
   definition: string;
   category: string;

@@ -5,8 +5,10 @@ import { catchError, of } from 'rxjs';
 import { HeaderComponent } from '../../components/header/header.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { EducationApiService } from '../../services/education-api.service';
-import { Quiz, GlossaryTerm, SimulationApiScenario, SimulationSubmitResult, SimulationPrediction } from '../../models';
-import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2 } from 'lucide-angular';
+import { AdminApiService } from '../../services/admin-api.service';
+import { AuthService } from '../../services/auth.service';
+import { Quiz, QuizQuestion, GlossaryTerm, SimulationApiScenario, SimulationSubmitResult, SimulationPrediction } from '../../models';
+import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2, Pencil, Trash2, Check, X } from 'lucide-angular';
 
 interface CompletedSimRecord {
   userPrediction: string;
@@ -65,14 +67,42 @@ interface CompletedSimRecord {
             </div>
 
             <div class="grid gap-4 md:grid-cols-2">
-              @for (item of filteredTerms(); track item.term) {
+              @for (item of filteredTerms(); track item.id) {
                 <div class="rounded-xl border border-border bg-card">
                   <div class="flex items-start justify-between p-6 pb-2">
                     <h3 class="text-lg font-semibold">{{ item.term }}</h3>
-                    <span class="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{{ item.category }}</span>
+                    <div class="flex items-center gap-2">
+                      <span class="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium">{{ item.category }}</span>
+                      @if (isAdmin()) {
+                        <button (click)="startEditGlossary(item)"
+                                class="inline-flex items-center rounded-md border border-border p-1 text-muted-foreground transition-colors hover:bg-secondary">
+                          <lucide-icon [img]="Pencil" [size]="12"></lucide-icon>
+                        </button>
+                        <button (click)="confirmDeleteGlossary(item)"
+                                class="inline-flex items-center rounded-md border border-destructive/30 p-1 text-destructive transition-colors hover:bg-destructive/10">
+                          <lucide-icon [img]="Trash2" [size]="12"></lucide-icon>
+                        </button>
+                      }
+                    </div>
                   </div>
                   <div class="px-6 pb-6">
-                    <p class="text-sm text-muted-foreground">{{ item.definition }}</p>
+                    @if (editingGlossaryId() === item.id) {
+                      <textarea [(ngModel)]="editGlossaryDefinition"
+                                class="mb-2 w-full rounded-lg border border-border bg-background p-2 text-sm text-foreground focus:border-accent focus:outline-none"
+                                rows="3"></textarea>
+                      <div class="flex gap-2">
+                        <button (click)="saveGlossary(item)"
+                                class="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs text-white hover:bg-accent/80">
+                          <lucide-icon [img]="CheckIcon" [size]="12"></lucide-icon> Save
+                        </button>
+                        <button (click)="editingGlossaryId.set(null)"
+                                class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                          <lucide-icon [img]="XIcon" [size]="12"></lucide-icon> Cancel
+                        </button>
+                      </div>
+                    } @else {
+                      <p class="text-sm text-muted-foreground">{{ item.definition }}</p>
+                    }
                   </div>
                 </div>
               }
@@ -105,9 +135,8 @@ interface CompletedSimRecord {
 
               <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @for (quiz of filteredQuizzes(); track quiz.id) {
-                  <div (click)="selectQuiz(quiz)"
-                       class="cursor-pointer rounded-xl border border-border bg-card transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5">
-                    <div class="p-6">
+                  <div class="relative rounded-xl border border-border bg-card transition-all hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5">
+                    <div (click)="selectQuiz(quiz)" class="cursor-pointer p-6">
                       <div class="flex items-start justify-between gap-2">
                         <span class="rounded-md px-2 py-0.5 text-xs font-medium"
                               [class]="getDifficultyClass(quiz.difficulty)">
@@ -128,6 +157,13 @@ interface CompletedSimRecord {
                       <p class="mt-2 text-sm text-muted-foreground">{{ quiz.description }}</p>
                       <p class="mt-3 text-xs text-muted-foreground">{{ quiz.totalQuestions }} questions</p>
                     </div>
+                    @if (isAdmin()) {
+                      <button (click)="$event.stopPropagation(); confirmDeleteQuiz(quiz)"
+                              class="absolute right-3 bottom-3 inline-flex items-center gap-1 rounded-md border border-destructive/30 px-2 py-1 text-xs text-destructive transition-colors hover:bg-destructive/10">
+                        <lucide-icon [img]="Trash2" [size]="12"></lucide-icon>
+                        Delete
+                      </button>
+                    }
                   </div>
                 }
               </div>
@@ -142,12 +178,60 @@ interface CompletedSimRecord {
               </button>
 
               <div class="mx-auto max-w-2xl rounded-xl border border-border bg-card">
+                @if (editingQuestionId()) {
+                  <!-- Admin: Edit question form -->
+                  <div class="space-y-4 p-6">
+                    <div>
+                      <label class="mb-1 block text-sm font-medium">Question</label>
+                      <textarea [(ngModel)]="editQuestionForm.question" rows="2"
+                                class="w-full rounded-lg border border-border bg-background p-2 text-sm focus:border-accent focus:outline-none"></textarea>
+                    </div>
+                    <div class="space-y-2">
+                      <label class="block text-sm font-medium">Options</label>
+                      @for (opt of editQuestionForm.options; track $index) {
+                        <div class="flex items-center gap-2">
+                          <input type="radio" [checked]="editQuestionForm.correctAnswer === $index"
+                                 (change)="editQuestionForm.correctAnswer = $index"
+                                 class="accent-accent" />
+                          <input type="text" [ngModel]="opt"
+                                 (ngModelChange)="updateOption($index, $event)"
+                                 class="flex-1 rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:border-accent focus:outline-none" />
+                        </div>
+                      }
+                      <p class="text-xs text-muted-foreground">Select the radio button for the correct answer</p>
+                    </div>
+                    <div>
+                      <label class="mb-1 block text-sm font-medium">Explanation</label>
+                      <textarea [(ngModel)]="editQuestionForm.explanation" rows="2"
+                                class="w-full rounded-lg border border-border bg-background p-2 text-sm focus:border-accent focus:outline-none"></textarea>
+                    </div>
+                    <div class="flex gap-2">
+                      <button (click)="saveQuizQuestion()"
+                              class="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-sm text-white hover:bg-accent/80">
+                        <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon> Save
+                      </button>
+                      <button (click)="editingQuestionId.set(null)"
+                              class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-secondary">
+                        <lucide-icon [img]="XIcon" [size]="14"></lucide-icon> Cancel
+                      </button>
+                    </div>
+                  </div>
+                } @else {
                 <div class="p-6">
                   <div class="flex items-center justify-between">
                     <span class="rounded-md border border-border px-2 py-0.5 text-xs font-medium">
                       Question {{ selectedQuestion() + 1 }} of {{ activeQuiz()!.questions.length }}
                     </span>
-                    <lucide-icon [img]="Brain" [size]="20" class="text-accent"></lucide-icon>
+                    <div class="flex items-center gap-2">
+                      @if (isAdmin()) {
+                        <button (click)="startEditQuestion(currentQuestion())"
+                                class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary">
+                          <lucide-icon [img]="Pencil" [size]="12"></lucide-icon>
+                          Edit
+                        </button>
+                      }
+                      <lucide-icon [img]="Brain" [size]="20" class="text-accent"></lucide-icon>
+                    </div>
                   </div>
                   <h3 class="mt-4 text-xl font-semibold">{{ currentQuestion().question }}</h3>
                 </div>
@@ -192,6 +276,7 @@ interface CompletedSimRecord {
                     </button>
                   }
                 </div>
+                }
               </div>
             </div>
           }
@@ -672,7 +757,11 @@ interface CompletedSimRecord {
 })
 export class EducationComponent {
   private readonly educationApi = inject(EducationApiService);
+  private readonly adminApi = inject(AdminApiService);
+  private readonly auth = inject(AuthService);
   readonly data = inject(MockDataService);
+
+  readonly isAdmin = computed(() => this.auth.user()?.role === 'ADMIN');
 
   readonly activeTab = signal<'glossary' | 'quiz' | 'simulation'>('glossary');
   readonly searchQuery = signal('');
@@ -722,6 +811,16 @@ export class EducationComponent {
   readonly User = User;
   readonly FileText = FileText;
   readonly Loader2 = Loader2;
+  readonly Pencil = Pencil;
+  readonly Trash2 = Trash2;
+  readonly CheckIcon = Check;
+  readonly XIcon = X;
+
+  // Admin editing state
+  readonly editingGlossaryId = signal<number | null>(null);
+  editGlossaryDefinition = '';
+  readonly editingQuestionId = signal<string | null>(null);
+  editQuestionForm = { question: '', options: [] as string[], correctAnswer: 0, explanation: '' };
 
   // API-backed signals
   readonly glossaryTerms = toSignal(
@@ -941,5 +1040,75 @@ export class EducationComponent {
     if (difficulty === 'Beginner') return 'bg-secondary text-secondary-foreground';
     if (difficulty === 'Intermediate') return 'border border-border';
     return 'bg-primary text-primary-foreground';
+  }
+
+  // ── Admin: Glossary ──
+
+  startEditGlossary(item: GlossaryTerm): void {
+    this.editGlossaryDefinition = item.definition;
+    this.editingGlossaryId.set(item.id);
+  }
+
+  saveGlossary(item: GlossaryTerm): void {
+    this.adminApi.updateGlossaryTerm(item.id, { definition: this.editGlossaryDefinition }).subscribe({
+      next: () => {
+        item.definition = this.editGlossaryDefinition;
+        this.editingGlossaryId.set(null);
+      },
+    });
+  }
+
+  confirmDeleteGlossary(item: GlossaryTerm): void {
+    if (!confirm(`Delete glossary term "${item.term}"?`)) return;
+    this.adminApi.deleteGlossaryTerm(item.id).subscribe({
+      next: () => {
+        // Remove from the local signal by reloading
+        window.location.reload();
+      },
+    });
+  }
+
+  // ── Admin: Quiz ──
+
+  confirmDeleteQuiz(quiz: Quiz): void {
+    if (!confirm(`Delete quiz "${quiz.title}"?`)) return;
+    this.adminApi.deleteQuiz(Number(quiz.id)).subscribe({
+      next: () => window.location.reload(),
+    });
+  }
+
+  startEditQuestion(q: QuizQuestion): void {
+    this.editQuestionForm = {
+      question: q.question,
+      options: [...q.options],
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation,
+    };
+    this.editingQuestionId.set(q.id);
+  }
+
+  updateOption(index: number, value: string): void {
+    this.editQuestionForm.options[index] = value;
+  }
+
+  saveQuizQuestion(): void {
+    const id = this.editingQuestionId();
+    if (!id) return;
+    this.adminApi.updateQuizQuestion(Number(id), this.editQuestionForm).subscribe({
+      next: () => {
+        // Update the local question data
+        const quiz = this.activeQuiz();
+        if (quiz) {
+          const q = quiz.questions.find(q => q.id === id);
+          if (q) {
+            q.question = this.editQuestionForm.question;
+            q.options = [...this.editQuestionForm.options];
+            q.correctAnswer = this.editQuestionForm.correctAnswer;
+            q.explanation = this.editQuestionForm.explanation;
+          }
+        }
+        this.editingQuestionId.set(null);
+      },
+    });
   }
 }

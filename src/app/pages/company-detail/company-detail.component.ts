@@ -1,16 +1,18 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../components/header/header.component';
 import { NewsCardComponent } from '../../components/news-card/news-card.component';
 import { CompanyApiService } from '../../services/company-api.service';
 import { NewsApiService } from '../../services/news-api.service';
+import { AdminApiService } from '../../services/admin-api.service';
 import { AuthService } from '../../services/auth.service';
 import { CompanyDetail, NewsItem } from '../../models';
-import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calendar, BarChart2, Bell, BellOff } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calendar, BarChart2, Bell, BellOff, Pencil, Trash2, Check, X } from 'lucide-angular';
 
 @Component({
   selector: 'app-company-detail',
-  imports: [RouterLink, HeaderComponent, NewsCardComponent, LucideAngularModule],
+  imports: [RouterLink, FormsModule, HeaderComponent, NewsCardComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-background">
@@ -89,13 +91,22 @@ import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calend
                 </div>
 
                 <!-- Subscribe button -->
-                <button (click)="toggleSubscription()"
-                        [class]="auth.isSubscribed(company()!.id)
-                          ? 'inline-flex flex-shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/20'
-                          : 'inline-flex flex-shrink-0 cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent/30 hover:text-accent'">
-                  <lucide-icon [img]="auth.isSubscribed(company()!.id) ? Bell : BellOff" [size]="16"></lucide-icon>
-                  {{ auth.isSubscribed(company()!.id) ? 'Subscribed' : 'Subscribe' }}
-                </button>
+                <div class="flex flex-shrink-0 gap-2">
+                  <button (click)="toggleSubscription()"
+                          [class]="auth.isSubscribed(company()!.id)
+                            ? 'inline-flex cursor-pointer items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/20'
+                            : 'inline-flex cursor-pointer items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-medium transition-colors hover:border-accent/30 hover:text-accent'">
+                    <lucide-icon [img]="auth.isSubscribed(company()!.id) ? Bell : BellOff" [size]="16"></lucide-icon>
+                    {{ auth.isSubscribed(company()!.id) ? 'Subscribed' : 'Subscribe' }}
+                  </button>
+                  @if (isAdmin()) {
+                    <button (click)="confirmDeleteCompany()"
+                            class="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive transition-colors hover:bg-destructive/20">
+                      <lucide-icon [img]="Trash2" [size]="16"></lucide-icon>
+                      Delete
+                    </button>
+                  }
+                </div>
               </div>
             </div>
 
@@ -139,10 +150,41 @@ import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calend
             </div>
 
             <!-- Description -->
-            @if (company()!.description) {
+            @if (company()!.description || isAdmin()) {
               <div class="rounded-xl border border-border bg-card p-6">
-                <h2 class="mb-3 font-semibold text-accent">About</h2>
-                <p class="leading-relaxed text-muted-foreground">{{ company()!.description }}</p>
+                <div class="mb-3 flex items-center justify-between">
+                  <h2 class="font-semibold text-accent">About</h2>
+                  @if (isAdmin() && !editingDescription()) {
+                    <button (click)="startEditDescription()"
+                            class="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary">
+                      <lucide-icon [img]="Pencil" [size]="12"></lucide-icon>
+                      Edit
+                    </button>
+                  }
+                </div>
+                @if (editingDescription()) {
+                  <textarea [(ngModel)]="editDescriptionValue"
+                            class="mb-2 w-full rounded-lg border border-border bg-background p-3 text-sm text-foreground focus:border-accent focus:outline-none"
+                            rows="5"></textarea>
+                  <div class="mb-3">
+                    <label class="mb-1 block text-xs text-muted-foreground">Logo URL</label>
+                    <input type="text" [(ngModel)]="editLogoUrlValue"
+                           class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-accent focus:outline-none"
+                           placeholder="https://..." />
+                  </div>
+                  <div class="flex gap-2">
+                    <button (click)="saveCompanyEdit()"
+                            class="inline-flex items-center gap-1 rounded-md bg-accent px-3 py-1.5 text-xs text-white hover:bg-accent/80">
+                      <lucide-icon [img]="CheckIcon" [size]="12"></lucide-icon> Save
+                    </button>
+                    <button (click)="editingDescription.set(false)"
+                            class="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs hover:bg-secondary">
+                      <lucide-icon [img]="XIcon" [size]="12"></lucide-icon> Cancel
+                    </button>
+                  </div>
+                } @else {
+                  <p class="leading-relaxed text-muted-foreground">{{ company()!.description }}</p>
+                }
               </div>
             }
 
@@ -189,6 +231,8 @@ export class CompanyDetailComponent implements OnInit {
   private readonly newsApi = inject(NewsApiService);
   readonly auth = inject(AuthService);
 
+  private readonly adminApi = inject(AdminApiService);
+
   readonly ArrowLeft = ArrowLeft;
   readonly ExternalLink = ExternalLink;
   readonly Globe = Globe;
@@ -197,6 +241,12 @@ export class CompanyDetailComponent implements OnInit {
   readonly BarChart2 = BarChart2;
   readonly Bell = Bell;
   readonly BellOff = BellOff;
+  readonly Pencil = Pencil;
+  readonly Trash2 = Trash2;
+  readonly CheckIcon = Check;
+  readonly XIcon = X;
+
+  readonly isAdmin = computed(() => this.auth.user()?.role === 'ADMIN');
 
   readonly loading = signal(true);
   readonly logoReady = signal(false);
@@ -204,6 +254,11 @@ export class CompanyDetailComponent implements OnInit {
   readonly company = signal<CompanyDetail | null>(null);
   readonly recentNews = signal<NewsItem[]>([]);
   readonly logoError = signal(false);
+
+  // Admin editing
+  readonly editingDescription = signal(false);
+  editDescriptionValue = '';
+  editLogoUrlValue = '';
 
   ngOnInit(): void {
     const ticker = this.route.snapshot.paramMap.get('ticker') ?? '';
@@ -265,5 +320,38 @@ export class CompanyDetailComponent implements OnInit {
 
   cleanUrl(url: string): string {
     return url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+  }
+
+  // ── Admin actions ──
+
+  startEditDescription(): void {
+    const c = this.company()!;
+    this.editDescriptionValue = c.description ?? '';
+    this.editLogoUrlValue = c.logoUrl ?? '';
+    this.editingDescription.set(true);
+  }
+
+  saveCompanyEdit(): void {
+    const c = this.company()!;
+    this.adminApi.updateCompany(c.id, {
+      description: this.editDescriptionValue,
+      logoUrl: this.editLogoUrlValue || undefined,
+    }).subscribe({
+      next: () => {
+        this.company.set({
+          ...c,
+          description: this.editDescriptionValue,
+          logoUrl: this.editLogoUrlValue || c.logoUrl,
+        });
+        this.editingDescription.set(false);
+      },
+    });
+  }
+
+  confirmDeleteCompany(): void {
+    if (!confirm(`Delete ${this.company()!.name}? This cannot be undone.`)) return;
+    this.adminApi.deleteCompany(this.company()!.id).subscribe({
+      next: () => this.router.navigate(['/companies']),
+    });
   }
 }
