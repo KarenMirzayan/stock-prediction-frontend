@@ -96,7 +96,7 @@ export interface Company {
   websiteUrl?: string;
   marketCap?: number; // in millions
   country?: string;   // country code
-  sectors: string[];
+  sector?: string;
 }
 
 export interface CompanyDetail extends Company {

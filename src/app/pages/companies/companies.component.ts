@@ -84,13 +84,10 @@ import { LucideAngularModule, Search, Building2, ExternalLink, Bell, BellOff } f
                   </div>
 
                   <div class="flex flex-wrap items-center gap-1.5">
-                    @for (sector of company.sectors.slice(0, 3); track sector) {
+                    @if (company.sector) {
                       <span class="rounded-md border border-border bg-secondary/50 px-1.5 py-0.5 text-xs text-muted-foreground">
-                        {{ sector }}
+                        {{ company.sector }}
                       </span>
-                    }
-                    @if (company.sectors.length > 3) {
-                      <span class="text-xs text-muted-foreground">+{{ company.sectors.length - 3 }}</span>
                     }
                     @if (company.country) {
                       <span class="ml-auto text-xs font-medium text-muted-foreground">{{ company.country }}</span>

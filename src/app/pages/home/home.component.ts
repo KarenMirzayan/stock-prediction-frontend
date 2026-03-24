@@ -9,8 +9,9 @@ import { NewsCardComponent } from '../../components/news-card/news-card.componen
 import { MockDataService } from '../../services/mock-data.service';
 import { NewsApiService } from '../../services/news-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';
+import { SectorApiService } from '../../services/sector-api.service';
 import { AuthService } from '../../services/auth.service';
-import { NewsItem, EventItem } from '../../models';
+import { NewsItem, EventItem, SectorData } from '../../models';
 
 @Component({
   selector: 'app-home',
@@ -34,7 +35,7 @@ import { NewsItem, EventItem } from '../../models';
         </div>
 
         <div class="mt-6">
-          <app-sector-sentiment [sectors]="mockData.homeSectors" />
+          <app-sector-sentiment [sectors]="sectors()" />
         </div>
 
         <div class="mt-8 grid gap-6 lg:grid-cols-3">
@@ -94,6 +95,7 @@ import { NewsItem, EventItem } from '../../models';
 export class HomeComponent implements OnInit {
   private readonly newsApi = inject(NewsApiService);
   private readonly calendarApi = inject(CalendarApiService);
+  private readonly sectorApi = inject(SectorApiService);
   private readonly router = inject(Router);
   readonly mockData = inject(MockDataService);
   readonly auth = inject(AuthService);
@@ -102,6 +104,7 @@ export class HomeComponent implements OnInit {
   readonly newsList = signal<NewsItem[]>([]);
   private allNews = signal<NewsItem[]>([]);
   readonly homeEvents = signal<EventItem[]>([]);
+  readonly sectors = signal<SectorData[]>([]);
   readonly loading = signal(true);
 
   constructor() {
@@ -134,6 +137,11 @@ export class HomeComponent implements OnInit {
     this.calendarApi.getUpcoming(6).subscribe({
       next: (events) => this.homeEvents.set(events.length ? events : this.mockData.homeEvents),
       error: () => this.homeEvents.set(this.mockData.homeEvents),
+    });
+
+    this.sectorApi.getHeatmap().subscribe({
+      next: (sectors) => this.sectors.set(sectors.length ? sectors : this.mockData.homeSectors),
+      error: () => this.sectors.set(this.mockData.homeSectors),
     });
   }
 

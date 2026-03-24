@@ -2,6 +2,26 @@ import { Component, ChangeDetectionStrategy, input, computed } from '@angular/co
 import { LucideAngularModule, TrendingUp, TrendingDown } from 'lucide-angular';
 import { SectorData, MarketState } from '../../models';
 
+interface Tile {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  sector: SectorData;
+}
+
+interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+interface TreeItem {
+  sector: SectorData;
+  area: number;
+}
+
 @Component({
   selector: 'app-sector-sentiment',
   imports: [LucideAngularModule],
@@ -26,42 +46,28 @@ import { SectorData, MarketState } from '../../models';
         </div>
       </div>
 
-      <div class="flex flex-col gap-1.5" style="height: 300px">
-        <div class="flex gap-1.5" [style.height.%]="topHeightPercent()">
-          @for (sector of topRow(); track sector.name) {
-            <div class="relative flex flex-col items-center justify-center overflow-hidden rounded-lg border p-4 transition-all hover:brightness-110"
-                 [class]="getSquareClass(sector.sentiment)"
-                 [style.width.%]="getTopWidth(sector)">
-              <span class="text-center text-sm font-semibold leading-tight">{{ sector.name }}</span>
-              <span class="mt-1 text-2xl font-bold" [class]="getValueClass(sector.sentiment)">
-                {{ sector.change > 0 ? '+' : '' }}{{ sector.change }}%
+      <div class="relative" style="height: 300px">
+        @for (tile of tiles(); track tile.sector.name) {
+          <div class="absolute p-[3px]"
+               [style.left.%]="tile.x"
+               [style.top.%]="tile.y"
+               [style.width.%]="tile.w"
+               [style.height.%]="tile.h">
+            <div class="flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border transition-all hover:brightness-110"
+                 [class]="getSquareClass(tile.sector.sentiment)">
+              <span class="text-center text-sm font-semibold leading-tight">{{ tile.sector.name }}</span>
+              <span class="mt-1 text-2xl font-bold" [class]="getValueClass(tile.sector.sentiment)">
+                {{ tile.sector.change > 0 ? '+' : '' }}{{ tile.sector.change }}%
               </span>
-              <div class="mt-1 flex items-center gap-1 text-xs opacity-80">
-                <lucide-icon [img]="getIcon(sector.sentiment)" [size]="14"
-                             [class]="getIconRotation(sector.sentiment)"></lucide-icon>
-                {{ getLabel(sector.sentiment) }}
+              <span class="mt-0.5 text-xs opacity-60">{{ formatMarketCap(tile.sector.marketCap) }}</span>
+              <div class="mt-0.5 flex items-center gap-1 text-xs opacity-80">
+                <lucide-icon [img]="getIcon(tile.sector.sentiment)" [size]="14"
+                             [class]="getIconRotation(tile.sector.sentiment)"></lucide-icon>
+                {{ getLabel(tile.sector.sentiment) }}
               </div>
             </div>
-          }
-        </div>
-
-        <div class="flex gap-1.5" [style.height.%]="bottomHeightPercent()">
-          @for (sector of bottomRow(); track sector.name) {
-            <div class="relative flex flex-col items-center justify-center overflow-hidden rounded-lg border p-4 transition-all hover:brightness-110"
-                 [class]="getSquareClass(sector.sentiment)"
-                 [style.width.%]="getBottomWidth(sector)">
-              <span class="text-center text-sm font-semibold leading-tight">{{ sector.name }}</span>
-              <span class="mt-1 text-2xl font-bold" [class]="getValueClass(sector.sentiment)">
-                {{ sector.change > 0 ? '+' : '' }}{{ sector.change }}%
-              </span>
-              <div class="mt-1 flex items-center gap-1 text-xs opacity-80">
-                <lucide-icon [img]="getIcon(sector.sentiment)" [size]="14"
-                             [class]="getIconRotation(sector.sentiment)"></lucide-icon>
-                {{ getLabel(sector.sentiment) }}
-              </div>
-            </div>
-          }
-        </div>
+          </div>
+        }
       </div>
     </div>
   `,
@@ -69,23 +75,104 @@ import { SectorData, MarketState } from '../../models';
 export class SectorSentimentComponent {
   readonly sectors = input.required<SectorData[]>();
 
-  readonly sorted = computed(() => [...this.sectors()].sort((a, b) => b.marketCap - a.marketCap));
-  readonly topRow = computed(() => this.sorted().slice(0, 3));
-  readonly bottomRow = computed(() => this.sorted().slice(3));
+  readonly tiles = computed(() => this.computeTreemap());
 
-  readonly totalCap = computed(() => this.sectors().reduce((sum, s) => sum + s.marketCap, 0));
-  readonly topTotal = computed(() => this.topRow().reduce((sum, s) => sum + s.marketCap, 0));
-  readonly bottomTotal = computed(() => this.bottomRow().reduce((sum, s) => sum + s.marketCap, 0));
+  private computeTreemap(): Tile[] {
+    const sectors = [...this.sectors()].sort((a, b) => b.marketCap - a.marketCap);
+    if (!sectors.length) return [];
 
-  readonly topHeightPercent = computed(() => (this.topTotal() / this.totalCap()) * 100);
-  readonly bottomHeightPercent = computed(() => (this.bottomTotal() / this.totalCap()) * 100);
+    const totalCap = sectors.reduce((sum, s) => sum + s.marketCap, 0);
+    if (totalCap === 0) return [];
 
-  getTopWidth(sector: SectorData): number {
-    return (sector.marketCap / this.topTotal()) * 100;
+    const containerArea = 100 * 100;
+    const minPct = 5; // minimum 5% area so small sectors stay visible
+
+    let items: TreeItem[] = sectors.map(s => ({
+      sector: s,
+      area: Math.max((s.marketCap / totalCap) * containerArea, (minPct / 100) * containerArea),
+    }));
+
+    // Re-normalize so areas sum to container area
+    const clampedTotal = items.reduce((sum, i) => sum + i.area, 0);
+    items = items.map(i => ({ ...i, area: (i.area / clampedTotal) * containerArea }));
+
+    const tiles: Tile[] = [];
+    this.squarify(items, [], { x: 0, y: 0, w: 100, h: 100 }, tiles);
+    return tiles;
   }
 
-  getBottomWidth(sector: SectorData): number {
-    return (sector.marketCap / this.bottomTotal()) * 100;
+  private squarify(children: TreeItem[], row: TreeItem[], rect: Rect, tiles: Tile[]): void {
+    if (children.length === 0) {
+      if (row.length > 0) this.layoutRow(row, rect, tiles);
+      return;
+    }
+
+    if (rect.w <= 0 || rect.h <= 0) return;
+
+    if (children.length === 1) {
+      this.layoutRow([...row, children[0]], rect, tiles);
+      return;
+    }
+
+    const c = children[0];
+    const shortSide = Math.min(rect.w, rect.h);
+    const newRow = [...row, c];
+
+    if (row.length === 0 || this.worst(newRow, shortSide) <= this.worst(row, shortSide)) {
+      this.squarify(children.slice(1), newRow, rect, tiles);
+    } else {
+      const remaining = this.layoutRow(row, rect, tiles);
+      this.squarify(children, [], remaining, tiles);
+    }
+  }
+
+  private worst(row: TreeItem[], shortSide: number): number {
+    if (row.length === 0 || shortSide === 0) return Infinity;
+
+    const s = row.reduce((sum, r) => sum + r.area, 0);
+    const s2 = s * s;
+    const w2 = shortSide * shortSide;
+
+    let worstRatio = 0;
+    for (const r of row) {
+      const ratio = Math.max((w2 * r.area) / s2, s2 / (w2 * r.area));
+      worstRatio = Math.max(worstRatio, ratio);
+    }
+    return worstRatio;
+  }
+
+  private layoutRow(row: TreeItem[], rect: Rect, tiles: Tile[]): Rect {
+    if (row.length === 0) return rect;
+
+    const totalArea = row.reduce((sum, r) => sum + r.area, 0);
+
+    if (rect.w >= rect.h) {
+      // Vertical strip on the left
+      const colWidth = totalArea / rect.h;
+      let y = rect.y;
+      for (const r of row) {
+        const h = r.area / colWidth;
+        tiles.push({ x: rect.x, y, w: colWidth, h, sector: r.sector });
+        y += h;
+      }
+      return { x: rect.x + colWidth, y: rect.y, w: rect.w - colWidth, h: rect.h };
+    } else {
+      // Horizontal strip on top
+      const rowHeight = totalArea / rect.w;
+      let x = rect.x;
+      for (const r of row) {
+        const w = r.area / rowHeight;
+        tiles.push({ x, y: rect.y, w, h: rowHeight, sector: r.sector });
+        x += w;
+      }
+      return { x: rect.x, y: rect.y + rowHeight, w: rect.w, h: rect.h - rowHeight };
+    }
+  }
+
+  formatMarketCap(cap: number): string {
+    if (cap >= 1_000_000) return `$${(cap / 1_000_000).toFixed(1)}T`;
+    if (cap >= 1_000) return `$${(cap / 1_000).toFixed(0)}B`;
+    return `$${cap.toFixed(0)}M`;
   }
 
   getSquareClass(sentiment: MarketState): string {

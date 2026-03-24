@@ -124,13 +124,11 @@ import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calend
                   <lucide-icon [img]="TrendingUp" [size]="12"></lucide-icon>
                   Sectors
                 </div>
-                @if (company()!.sectors.length) {
+                @if (company()!.sector) {
                   <div class="flex flex-wrap gap-1.5">
-                    @for (sector of company()!.sectors; track sector) {
-                      <span class="rounded-md border border-border bg-secondary/50 px-2 py-0.5 text-xs font-medium">
-                        {{ sector }}
-                      </span>
-                    }
+                    <span class="rounded-md border border-border bg-secondary/50 px-2 py-0.5 text-xs font-medium">
+                      {{ company()!.sector }}
+                    </span>
                   </div>
                 } @else {
                   <p class="text-sm text-muted-foreground">—</p>
