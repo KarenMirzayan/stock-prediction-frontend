@@ -135,9 +135,9 @@ Analysts note that the timing of potential rate cuts will depend heavily on cont
 The move is expected to have broad implications across multiple sectors, particularly for interest-rate-sensitive industries such as real estate, utilities, and consumer durables.`,
     analyticalExplanation: 'The Federal Reserve\'s shift toward a more dovish stance represents a significant inflection point for markets. Lower interest rates typically benefit financial institutions through increased lending activity, while also supporting equity valuations broadly. The banking sector stands to benefit from both improved loan demand and reduced funding costs, though net interest margins may face some compression.',
     predictions: [
-      { scope: 'COMPANY', direction: 'BULLISH', timeHorizon: 'SHORT_TERM', confidence: 75, rationale: 'Rate cuts benefit lending activity.', targets: ['JPM'], evidence: ['Fed signaled rate cuts'] },
-      { scope: 'COMPANY', direction: 'BULLISH', timeHorizon: 'SHORT_TERM', confidence: 70, rationale: 'Lower rates reduce deposit costs.', targets: ['BAC'], evidence: ['Inflation cooling'] },
-      { scope: 'SECTOR', direction: 'BULLISH', timeHorizon: 'MID_TERM', confidence: 65, rationale: 'Broad financial sector uplift expected.', targets: ['FINANCE'], evidence: ['Dovish policy shift'] },
+      { id: 1, scope: 'COMPANY', direction: 'BULLISH', timeHorizon: 'SHORT_TERM', confidence: 75, rationale: 'Rate cuts benefit lending activity.', targets: ['JPM'], evidence: ['Fed signaled rate cuts'] },
+      { id: 2, scope: 'COMPANY', direction: 'BULLISH', timeHorizon: 'SHORT_TERM', confidence: 70, rationale: 'Lower rates reduce deposit costs.', targets: ['BAC'], evidence: ['Inflation cooling'] },
+      { id: 3, scope: 'SECTOR', direction: 'BULLISH', timeHorizon: 'MID_TERM', confidence: 65, rationale: 'Broad financial sector uplift expected.', targets: ['FINANCE'], evidence: ['Dovish policy shift'] },
     ],
   };
 
@@ -308,14 +308,14 @@ The move is expected to have broad implications across multiple sectors, particu
   ];
 
   readonly glossaryTerms: GlossaryTerm[] = [
-    { term: 'Bull Market', definition: 'A market condition where prices are rising or expected to rise. The term is typically used to refer to the stock market but can apply to anything traded, such as bonds, real estate, currencies, and commodities.', category: 'Market Basics' },
-    { term: 'Bear Market', definition: 'A market condition in which prices are falling or expected to fall. It typically describes a condition where securities prices fall 20% or more from recent highs.', category: 'Market Basics' },
-    { term: 'P/E Ratio', definition: 'Price-to-Earnings ratio. A valuation metric calculated by dividing the market price per share by earnings per share. It indicates how much investors are willing to pay per dollar of earnings.', category: 'Valuation' },
-    { term: 'Market Cap', definition: "Market capitalization. The total market value of a company's outstanding shares, calculated by multiplying the share price by the number of shares outstanding.", category: 'Valuation' },
-    { term: 'Dividend', definition: "A distribution of a portion of a company's earnings to its shareholders. Dividends are typically paid quarterly and represent a return on investment for stockholders.", category: 'Income' },
-    { term: 'Volatility', definition: 'A statistical measure of the dispersion of returns for a given security or market index. Higher volatility means greater price fluctuations and potentially higher risk.', category: 'Risk' },
-    { term: 'Short Selling', definition: "An investment strategy that speculates on the decline of a stock's price. Traders borrow shares to sell at the current price, hoping to buy them back later at a lower price.", category: 'Trading' },
-    { term: 'ETF', definition: 'Exchange-Traded Fund. A type of pooled investment security that operates much like a mutual fund but trades on stock exchanges like individual stocks.', category: 'Investment Vehicles' },
+    { id: 1, term: 'Bull Market', definition: 'A market condition where prices are rising or expected to rise. The term is typically used to refer to the stock market but can apply to anything traded, such as bonds, real estate, currencies, and commodities.', category: 'Market Basics' },
+    { id: 2, term: 'Bear Market', definition: 'A market condition in which prices are falling or expected to fall. It typically describes a condition where securities prices fall 20% or more from recent highs.', category: 'Market Basics' },
+    { id: 3, term: 'P/E Ratio', definition: 'Price-to-Earnings ratio. A valuation metric calculated by dividing the market price per share by earnings per share. It indicates how much investors are willing to pay per dollar of earnings.', category: 'Valuation' },
+    { id: 4, term: 'Market Cap', definition: "Market capitalization. The total market value of a company's outstanding shares, calculated by multiplying the share price by the number of shares outstanding.", category: 'Valuation' },
+    { id: 5, term: 'Dividend', definition: "A distribution of a portion of a company's earnings to its shareholders. Dividends are typically paid quarterly and represent a return on investment for stockholders.", category: 'Income' },
+    { id: 6, term: 'Volatility', definition: 'A statistical measure of the dispersion of returns for a given security or market index. Higher volatility means greater price fluctuations and potentially higher risk.', category: 'Risk' },
+    { id: 7, term: 'Short Selling', definition: "An investment strategy that speculates on the decline of a stock's price. Traders borrow shares to sell at the current price, hoping to buy them back later at a lower price.", category: 'Trading' },
+    { id: 8, term: 'ETF', definition: 'Exchange-Traded Fund. A type of pooled investment security that operates much like a mutual fund but trades on stock exchanges like individual stocks.', category: 'Investment Vehicles' },
   ];
 
   readonly quizzes: Quiz[] = [
