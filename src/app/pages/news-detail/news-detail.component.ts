@@ -1,18 +1,22 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { catchError, of } from 'rxjs';
 import { HeaderComponent } from '../../components/header/header.component';
 import { NewsCardComponent } from '../../components/news-card/news-card.component';
+import { GlossaryHighlightComponent } from '../../components/glossary-highlight/glossary-highlight.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { NewsApiService } from '../../services/news-api.service';
 import { AdminApiService } from '../../services/admin-api.service';
 import { AuthService } from '../../services/auth.service';
+import { EducationApiService } from '../../services/education-api.service';
 import { LucideAngularModule, ArrowLeft, TrendingUp, TrendingDown, Minus, Shuffle, Zap, Share2, Globe, Pencil, Trash2, Check, X } from 'lucide-angular';
-import { Direction, NewsDetail, PredictionDetail } from '../../models';
+import { Direction, GlossaryTerm, NewsDetail, PredictionDetail } from '../../models';
 
 @Component({
   selector: 'app-news-detail',
-  imports: [RouterLink, FormsModule, HeaderComponent, NewsCardComponent, LucideAngularModule],
+  imports: [RouterLink, FormsModule, HeaderComponent, NewsCardComponent, GlossaryHighlightComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-background">
@@ -144,7 +148,9 @@ import { Direction, NewsDetail, PredictionDetail } from '../../models';
                   </button>
                 </div>
               } @else {
-                <p class="text-muted-foreground">{{ news()!.analyticalExplanation }}</p>
+                <p class="text-muted-foreground">
+                  <app-glossary-highlight [text]="news()!.analyticalExplanation" [terms]="glossaryTerms()" />
+                </p>
               }
             </div>
 
@@ -228,11 +234,15 @@ import { Direction, NewsDetail, PredictionDetail } from '../../models';
                             </div>
                           }
                         </div>
-                        <p class="text-sm leading-relaxed text-foreground/80">{{ pred.rationale }}</p>
+                        <p class="text-sm leading-relaxed text-foreground/80">
+                          <app-glossary-highlight [text]="pred.rationale" [terms]="glossaryTerms()" />
+                        </p>
                         @if (pred.evidence.length) {
                           <ul class="mt-2 space-y-1 border-t border-border pt-2">
                             @for (item of pred.evidence; track $index) {
-                              <li class="text-xs text-muted-foreground before:mr-1.5 before:content-['·']">{{ item }}</li>
+                              <li class="text-xs text-muted-foreground before:mr-1.5 before:content-['·']">
+                                <app-glossary-highlight [text]="item" [terms]="glossaryTerms()" />
+                              </li>
                             }
                           </ul>
                         }
@@ -272,7 +282,9 @@ import { Direction, NewsDetail, PredictionDetail } from '../../models';
                 </div>
               } @else {
                 @for (paragraph of paragraphs(); track $index) {
-                  <p class="mb-4 leading-relaxed text-foreground/90">{{ paragraph }}</p>
+                  <p class="mb-4 leading-relaxed text-foreground/90">
+                    <app-glossary-highlight [text]="paragraph" [terms]="glossaryTerms()" />
+                  </p>
                 }
               }
             </div>
@@ -304,6 +316,7 @@ export class NewsDetailComponent implements OnInit {
   private readonly newsApi = inject(NewsApiService);
   private readonly adminApi = inject(AdminApiService);
   private readonly auth = inject(AuthService);
+  private readonly educationApi = inject(EducationApiService);
   private readonly mockData = inject(MockDataService);
 
   readonly ArrowLeft = ArrowLeft;
@@ -321,6 +334,10 @@ export class NewsDetailComponent implements OnInit {
   readonly relatedNews = signal(this.mockData.relatedNews);
   readonly loading = signal(true);
   readonly paragraphs = signal<string[]>([]);
+  readonly glossaryTerms = toSignal(
+    this.educationApi.getGlossaryTerms().pipe(catchError(() => of([] as GlossaryTerm[]))),
+    { initialValue: [] as GlossaryTerm[] }
+  );
 
   // Admin editing state
   readonly editingSummary = signal<string | null>(null);

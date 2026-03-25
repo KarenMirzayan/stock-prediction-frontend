@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { GlossaryTerm } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class AdminApiService {
@@ -41,6 +42,14 @@ export class AdminApiService {
   }
 
   // Glossary
+  createGlossaryTerm(data: { term: string; definition?: string; category: string }): Observable<GlossaryTerm> {
+    return this.http.post<GlossaryTerm>(`${this.baseUrl}/glossary`, data);
+  }
+
+  generateGlossaryTerms(terms: { term: string; category: string }[]): Observable<GlossaryTerm[]> {
+    return this.http.post<GlossaryTerm[]>(`${this.baseUrl}/glossary/generate`, { terms });
+  }
+
   updateGlossaryTerm(id: number, data: { definition: string }): Observable<void> {
     return this.http.put<void>(`${this.baseUrl}/glossary/${id}`, data);
   }

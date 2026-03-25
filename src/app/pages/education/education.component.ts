@@ -8,7 +8,7 @@ import { EducationApiService } from '../../services/education-api.service';
 import { AdminApiService } from '../../services/admin-api.service';
 import { AuthService } from '../../services/auth.service';
 import { Quiz, QuizQuestion, GlossaryTerm, SimulationApiScenario, SimulationSubmitResult, SimulationPrediction } from '../../models';
-import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2, Pencil, Trash2, Check, X } from 'lucide-angular';
+import { LucideAngularModule, BookOpen, Search, Brain, Play, CheckCircle2, XCircle, ArrowRight, Lightbulb, ArrowLeft, Trophy, ClipboardList, Calendar, Send, BarChart3, User, FileText, Loader2, Pencil, Trash2, Check, X, Plus, Sparkles } from 'lucide-angular';
 
 interface CompletedSimRecord {
   userPrediction: string;
@@ -58,13 +58,116 @@ interface CompletedSimRecord {
         <!-- Glossary Tab -->
         @if (activeTab() === 'glossary') {
           <div class="space-y-4">
-            <div class="relative max-w-md">
-              <lucide-icon [img]="Search" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"></lucide-icon>
-              <input type="text" placeholder="Search terms..."
-                     [ngModel]="searchQuery()"
-                     (ngModelChange)="searchQuery.set($event)"
-                     class="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+            <div class="flex flex-wrap items-center gap-3">
+              <div class="relative max-w-md flex-1">
+                <lucide-icon [img]="Search" [size]="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"></lucide-icon>
+                <input type="text" placeholder="Search terms..."
+                       [ngModel]="searchQuery()"
+                       (ngModelChange)="searchQuery.set($event)"
+                       class="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring" />
+              </div>
+              @if (isAdmin()) {
+                <button (click)="showAddTerm.set(!showAddTerm())"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary">
+                  <lucide-icon [img]="Plus" [size]="16"></lucide-icon>
+                  Add Term
+                </button>
+                <button (click)="showBulkGenerate.set(!showBulkGenerate())"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent/20">
+                  <lucide-icon [img]="Sparkles" [size]="16"></lucide-icon>
+                  Generate with AI
+                </button>
+              }
             </div>
+
+            <!-- Add single term form -->
+            @if (showAddTerm()) {
+              <div class="rounded-xl border border-border bg-card p-5">
+                <h3 class="mb-3 font-semibold">Add New Term</h3>
+                <div class="grid gap-3 md:grid-cols-2">
+                  <div>
+                    <label class="mb-1 block text-xs text-muted-foreground">Term</label>
+                    <input type="text" [(ngModel)]="newTermForm.term"
+                           class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                           placeholder="e.g. Hedge Fund" />
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-muted-foreground">Category</label>
+                    <input type="text" [(ngModel)]="newTermForm.category"
+                           class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                           placeholder="e.g. Investment Vehicles" />
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <label class="mb-1 block text-xs text-muted-foreground">Definition (leave empty to auto-generate with AI)</label>
+                  <textarea [(ngModel)]="newTermForm.definition" rows="2"
+                            class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                            placeholder="Optional — AI will generate if left blank"></textarea>
+                </div>
+                <div class="mt-3 flex gap-2">
+                  <button (click)="createTerm()"
+                          [disabled]="!newTermForm.term.trim() || !newTermForm.category.trim() || creatingTerm()"
+                          class="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm text-white transition-colors hover:bg-accent/80 disabled:opacity-50">
+                    @if (creatingTerm()) {
+                      <lucide-icon [img]="Loader2" [size]="14" class="animate-spin"></lucide-icon>
+                      Saving...
+                    } @else {
+                      <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
+                      Save
+                    }
+                  </button>
+                  <button (click)="showAddTerm.set(false)"
+                          class="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-secondary">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- Bulk generate form -->
+            @if (showBulkGenerate()) {
+              <div class="rounded-xl border border-accent/20 bg-accent/5 p-5">
+                <div class="mb-3 flex items-center gap-2">
+                  <lucide-icon [img]="Sparkles" [size]="18" class="text-accent"></lucide-icon>
+                  <h3 class="font-semibold">Generate Terms with AI</h3>
+                </div>
+                <p class="mb-3 text-sm text-muted-foreground">Enter term names (one per line). Ollama will generate definitions for each.</p>
+                <div class="grid gap-3 md:grid-cols-3">
+                  <div class="md:col-span-2">
+                    <label class="mb-1 block text-xs text-muted-foreground">Terms (one per line)</label>
+                    <textarea [(ngModel)]="bulkTermsText" rows="5"
+                              class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                              placeholder="Hedge Fund&#10;Futures Contract&#10;Options Trading&#10;Arbitrage&#10;Liquidity"></textarea>
+                  </div>
+                  <div>
+                    <label class="mb-1 block text-xs text-muted-foreground">Category for all</label>
+                    <input type="text" [(ngModel)]="bulkCategory"
+                           class="w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-accent focus:outline-none"
+                           placeholder="e.g. Trading" />
+                    <p class="mt-2 text-xs text-muted-foreground">
+                      {{ bulkTermCount }} terms ready
+                    </p>
+                  </div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                  <button (click)="generateBulkTerms()"
+                          [disabled]="!bulkTermsText.trim() || !bulkCategory.trim() || generatingTerms()"
+                          class="inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm text-white transition-colors hover:bg-accent/80 disabled:opacity-50">
+                    @if (generatingTerms()) {
+                      <lucide-icon [img]="Loader2" [size]="14" class="animate-spin"></lucide-icon>
+                      Generating...
+                    } @else {
+                      <lucide-icon [img]="Sparkles" [size]="14"></lucide-icon>
+                      Generate All
+                    }
+                  </button>
+                  <button (click)="showBulkGenerate.set(false)"
+                          class="rounded-md border border-border px-4 py-2 text-sm transition-colors hover:bg-secondary">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            }
 
             <div class="grid gap-4 md:grid-cols-2">
               @for (item of filteredTerms(); track item.id) {
@@ -815,6 +918,21 @@ export class EducationComponent {
   readonly Trash2 = Trash2;
   readonly CheckIcon = Check;
   readonly XIcon = X;
+  readonly Plus = Plus;
+  readonly Sparkles = Sparkles;
+
+  // Admin: add term / bulk generate state
+  readonly showAddTerm = signal(false);
+  readonly showBulkGenerate = signal(false);
+  readonly creatingTerm = signal(false);
+  readonly generatingTerms = signal(false);
+  newTermForm = { term: '', definition: '', category: '' };
+  bulkTermsText = '';
+  bulkCategory = '';
+
+  get bulkTermCount(): number {
+    return this.bulkTermsText.split('\n').filter(l => l.trim()).length;
+  }
 
   // Admin editing state
   readonly editingGlossaryId = signal<number | null>(null);
@@ -1109,6 +1227,47 @@ export class EducationComponent {
         }
         this.editingQuestionId.set(null);
       },
+    });
+  }
+
+  // ── Admin: Create / Generate Glossary Terms ──
+
+  createTerm(): void {
+    if (this.creatingTerm()) return;
+    this.creatingTerm.set(true);
+    const { term, definition, category } = this.newTermForm;
+    this.adminApi.createGlossaryTerm({
+      term: term.trim(),
+      definition: definition.trim() || undefined,
+      category: category.trim(),
+    }).subscribe({
+      next: () => {
+        this.newTermForm = { term: '', definition: '', category: '' };
+        this.showAddTerm.set(false);
+        this.creatingTerm.set(false);
+        window.location.reload();
+      },
+      error: () => this.creatingTerm.set(false),
+    });
+  }
+
+  generateBulkTerms(): void {
+    if (this.generatingTerms()) return;
+    this.generatingTerms.set(true);
+    const terms = this.bulkTermsText
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
+      .map(term => ({ term, category: this.bulkCategory.trim() }));
+    this.adminApi.generateGlossaryTerms(terms).subscribe({
+      next: () => {
+        this.bulkTermsText = '';
+        this.bulkCategory = '';
+        this.showBulkGenerate.set(false);
+        this.generatingTerms.set(false);
+        window.location.reload();
+      },
+      error: () => this.generatingTerms.set(false),
     });
   }
 }
