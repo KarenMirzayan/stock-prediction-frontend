@@ -22,11 +22,7 @@ export const routes: Routes = [
     path: 'calendar',
     loadComponent: () => import('./pages/calendar/calendar.component').then(m => m.CalendarComponent),
   },
-  {
-    path: 'heatmap',
-    loadComponent: () => import('./pages/heatmap/heatmap.component').then(m => m.HeatmapComponent),
-  },
-  {
+{
     path: 'education',
     loadComponent: () => import('./pages/education/education.component').then(m => m.EducationComponent),
   },

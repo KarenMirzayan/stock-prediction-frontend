@@ -7,12 +7,13 @@ import { CompanyApiService } from '../../services/company-api.service';
 import { NewsApiService } from '../../services/news-api.service';
 import { AdminApiService } from '../../services/admin-api.service';
 import { AuthService } from '../../services/auth.service';
-import { CompanyDetail, NewsItem } from '../../models';
-import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calendar, BarChart2, Bell, BellOff, Pencil, Trash2, Check, X } from 'lucide-angular';
+import { CompanyDetail, CompanySentiment, NewsItem } from '../../models';
+import { SentimentGaugeComponent } from '../../components/sentiment-gauge/sentiment-gauge.component';
+import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, TrendingDown, Calendar, BarChart2, Bell, BellOff, Pencil, Trash2, Check, X, MessageSquare, ArrowUp, ArrowDown, Hash, ThumbsUp } from 'lucide-angular';
 
 @Component({
   selector: 'app-company-detail',
-  imports: [RouterLink, FormsModule, HeaderComponent, NewsCardComponent, LucideAngularModule],
+  imports: [RouterLink, FormsModule, HeaderComponent, NewsCardComponent, SentimentGaugeComponent, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-background">
@@ -147,6 +148,105 @@ import { LucideAngularModule, ArrowLeft, ExternalLink, Globe, TrendingUp, Calend
               </div>
             </div>
 
+            <!-- Sentiment & Reddit Buzz -->
+            @if (!sentimentLoading()) {
+              @if (sentiment(); as s) {
+                <div class="grid gap-4 md:grid-cols-2">
+                  <!-- Sentiment gauge -->
+                  <app-sentiment-gauge [value]="s.score" [label]="company()!.ticker + ' Sentiment'" />
+
+                  <!-- Reddit Buzz -->
+                  @if (s.redditBuzz; as buzz) {
+                    <div class="rounded-xl border border-border bg-card p-5">
+                      <div class="mb-4 flex items-center justify-between">
+                        <h3 class="font-semibold">Reddit Buzz</h3>
+                        <span class="rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">24h data</span>
+                      </div>
+                      <div class="grid grid-cols-3 gap-4">
+                        <!-- Rank -->
+                        <div class="text-center">
+                          <div class="mb-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                            <lucide-icon [img]="Hash" [size]="12"></lucide-icon>
+                            Rank
+                          </div>
+                          <p class="text-xl font-bold">{{ buzz.rank }}</p>
+                          @if (buzz.rankChange !== 0) {
+                            <div class="mt-0.5 flex items-center justify-center gap-0.5 text-xs"
+                                 [class]="buzz.rankChange > 0 ? 'text-accent' : 'text-destructive'">
+                              <lucide-icon [img]="buzz.rankChange > 0 ? ArrowUp : ArrowDown" [size]="12"></lucide-icon>
+                              {{ Math.abs(buzz.rankChange) }}
+                            </div>
+                          }
+                        </div>
+                        <!-- Mentions -->
+                        <div class="text-center">
+                          <div class="mb-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                            <lucide-icon [img]="MessageSquare" [size]="12"></lucide-icon>
+                            Mentions
+                          </div>
+                          <p class="text-xl font-bold">{{ buzz.mentions }}</p>
+                          @if (buzz.mentionChange !== 0) {
+                            <div class="mt-0.5 flex items-center justify-center gap-0.5 text-xs"
+                                 [class]="buzz.mentionChange > 0 ? 'text-accent' : 'text-destructive'">
+                              <lucide-icon [img]="buzz.mentionChange > 0 ? ArrowUp : ArrowDown" [size]="12"></lucide-icon>
+                              {{ Math.abs(buzz.mentionChange) }}
+                            </div>
+                          }
+                        </div>
+                        <!-- Upvotes -->
+                        <div class="text-center">
+                          <div class="mb-1 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                            <lucide-icon [img]="ThumbsUp" [size]="12"></lucide-icon>
+                            Upvotes
+                          </div>
+                          <p class="text-xl font-bold">{{ buzz.upvotes }}</p>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+
+                <!-- Prediction breakdown -->
+                @if (s.totalPredictions > 0) {
+                  <div class="rounded-xl border border-border bg-card p-5">
+                    <h3 class="mb-3 font-semibold">Prediction Breakdown</h3>
+                    <div class="mb-3 flex h-3 overflow-hidden rounded-full bg-secondary">
+                      @if (s.bullishCount) {
+                        <div class="bg-accent transition-all" [style.width.%]="s.bullishCount / s.totalPredictions * 100"></div>
+                      }
+                      @if (s.neutralCount) {
+                        <div class="bg-warning transition-all" [style.width.%]="s.neutralCount / s.totalPredictions * 100"></div>
+                      }
+                      @if (s.bearishCount) {
+                        <div class="bg-destructive transition-all" [style.width.%]="s.bearishCount / s.totalPredictions * 100"></div>
+                      }
+                    </div>
+                    <div class="flex justify-between text-xs">
+                      <span class="flex items-center gap-1.5">
+                        <span class="inline-block h-2.5 w-2.5 rounded-sm bg-accent"></span>
+                        Bullish {{ s.bullishCount }}
+                      </span>
+                      <span class="flex items-center gap-1.5">
+                        <span class="inline-block h-2.5 w-2.5 rounded-sm bg-warning"></span>
+                        Neutral {{ s.neutralCount }}
+                      </span>
+                      <span class="flex items-center gap-1.5">
+                        <span class="inline-block h-2.5 w-2.5 rounded-sm bg-destructive"></span>
+                        Bearish {{ s.bearishCount }}
+                      </span>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">{{ s.description }} ({{ s.totalPredictions }} predictions, last 30 days)</p>
+                  </div>
+                }
+              }
+            } @else {
+              <!-- Sentiment skeleton -->
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="h-24 animate-pulse rounded-xl border border-border bg-card"></div>
+                <div class="h-24 animate-pulse rounded-xl border border-border bg-card"></div>
+              </div>
+            }
+
             <!-- Description -->
             @if (company()!.description || isAdmin()) {
               <div class="rounded-xl border border-border bg-card p-6">
@@ -243,14 +343,22 @@ export class CompanyDetailComponent implements OnInit {
   readonly Trash2 = Trash2;
   readonly CheckIcon = Check;
   readonly XIcon = X;
+  readonly MessageSquare = MessageSquare;
+  readonly ArrowUp = ArrowUp;
+  readonly ArrowDown = ArrowDown;
+  readonly Hash = Hash;
+  readonly ThumbsUp = ThumbsUp;
+  readonly Math = Math;
 
   readonly isAdmin = computed(() => this.auth.user()?.role === 'ADMIN');
 
   readonly loading = signal(true);
   readonly logoReady = signal(false);
   readonly newsLoading = signal(true);
+  readonly sentimentLoading = signal(true);
   readonly company = signal<CompanyDetail | null>(null);
   readonly recentNews = signal<NewsItem[]>([]);
+  readonly sentiment = signal<CompanySentiment | null>(null);
   readonly logoError = signal(false);
 
   // Admin editing
@@ -266,6 +374,7 @@ export class CompanyDetailComponent implements OnInit {
         this.company.set(c);
         this.loading.set(false);
         this.loadNews(c.ticker);
+        this.loadSentiment(c.ticker);
         if (c.logoUrl) {
           const img = new Image();
           img.onload = () => this.logoReady.set(true);
@@ -280,6 +389,7 @@ export class CompanyDetailComponent implements OnInit {
         this.loading.set(false);
         this.logoReady.set(true);
         this.newsLoading.set(false);
+        this.sentimentLoading.set(false);
       },
     });
   }
@@ -298,6 +408,16 @@ export class CompanyDetailComponent implements OnInit {
     } else {
       this.auth.subscribe(c.id).subscribe();
     }
+  }
+
+  private loadSentiment(ticker: string): void {
+    this.companyApi.getSentiment(ticker).subscribe({
+      next: (data) => {
+        this.sentiment.set(data);
+        this.sentimentLoading.set(false);
+      },
+      error: () => this.sentimentLoading.set(false),
+    });
   }
 
   private loadNews(ticker: string): void {

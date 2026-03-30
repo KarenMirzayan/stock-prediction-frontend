@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import {
   NewsItem, NewsDetail, SectorData, EventItem, CalendarEvent,
-  HeatmapSector, GlossaryTerm, Quiz, SimulationScenario,
+  GlossaryTerm, Quiz, SimulationScenario,
   SubscribedCompany, SubscribedSector, ForecastHistoryItem, ForecastStats
 } from '../models';
 
@@ -220,74 +220,6 @@ The move is expected to have broad implications across multiple sectors, particu
     { id: '26', title: 'Amazon Q4 Earnings Report',     date: '2026-02-27', time: '4:00 PM EST',  company: 'AMZN',       sector: 'Technology', relevance: 'high',   type: 'earnings' },
     { id: '27', title: 'JPMorgan Healthcare Conf.',     date: '2026-02-28', time: '9:00 AM EST',  company: 'JPM',        sector: 'Finance',    relevance: 'medium', type: 'conference' },
     { id: '28', title: 'Personal Income & Spending',    date: '2026-02-28', time: '8:30 AM EST',  sector: 'Economy',     relevance: 'medium', type: 'economic' },
-  ];
-
-  readonly heatmapSectors: HeatmapSector[] = [
-    {
-      id: 'tech', name: 'Technology', sentiment: 65, discussionVolume: 45000,
-      companies: [
-        { symbol: 'AAPL', name: 'Apple Inc.', sentiment: 72, change: 2.3 },
-        { symbol: 'MSFT', name: 'Microsoft Corp.', sentiment: 68, change: 1.8 },
-        { symbol: 'GOOGL', name: 'Alphabet Inc.', sentiment: 55, change: -0.5 },
-        { symbol: 'NVDA', name: 'NVIDIA Corp.', sentiment: 78, change: 4.2 },
-      ],
-      topics: ['AI Development', 'Cloud Computing', 'Earnings Reports', 'Product Launches'],
-    },
-    {
-      id: 'finance', name: 'Finance', sentiment: 42, discussionVolume: 32000,
-      companies: [
-        { symbol: 'JPM', name: 'JPMorgan Chase', sentiment: 45, change: 0.8 },
-        { symbol: 'BAC', name: 'Bank of America', sentiment: 38, change: -1.2 },
-        { symbol: 'GS', name: 'Goldman Sachs', sentiment: 52, change: 1.5 },
-        { symbol: 'WFC', name: 'Wells Fargo', sentiment: 35, change: -0.9 },
-      ],
-      topics: ['Interest Rates', 'Loan Growth', 'Regulatory Changes', 'Digital Banking'],
-    },
-    {
-      id: 'energy', name: 'Energy', sentiment: 28, discussionVolume: 28000,
-      companies: [
-        { symbol: 'XOM', name: 'Exxon Mobil', sentiment: 32, change: -2.1 },
-        { symbol: 'CVX', name: 'Chevron', sentiment: 25, change: -2.8 },
-        { symbol: 'COP', name: 'ConocoPhillips', sentiment: 30, change: -1.5 },
-      ],
-      topics: ['Oil Prices', 'OPEC Decisions', 'Renewable Energy', 'Climate Policy'],
-    },
-    {
-      id: 'healthcare', name: 'Healthcare', sentiment: 55, discussionVolume: 22000,
-      companies: [
-        { symbol: 'JNJ', name: 'Johnson & Johnson', sentiment: 58, change: 0.5 },
-        { symbol: 'PFE', name: 'Pfizer', sentiment: 48, change: -0.3 },
-        { symbol: 'UNH', name: 'UnitedHealth', sentiment: 62, change: 1.2 },
-      ],
-      topics: ['Drug Approvals', 'Medicare Policy', 'Biotech Innovation', 'M&A Activity'],
-    },
-    {
-      id: 'consumer', name: 'Consumer', sentiment: 35, discussionVolume: 18000,
-      companies: [
-        { symbol: 'AMZN', name: 'Amazon', sentiment: 45, change: 1.1 },
-        { symbol: 'WMT', name: 'Walmart', sentiment: 32, change: -1.4 },
-        { symbol: 'TGT', name: 'Target', sentiment: 28, change: -2.0 },
-      ],
-      topics: ['Consumer Spending', 'E-commerce Growth', 'Retail Sales', 'Supply Chain'],
-    },
-    {
-      id: 'industrial', name: 'Industrial', sentiment: 48, discussionVolume: 15000,
-      companies: [
-        { symbol: 'CAT', name: 'Caterpillar', sentiment: 52, change: 0.8 },
-        { symbol: 'BA', name: 'Boeing', sentiment: 42, change: -0.5 },
-        { symbol: 'GE', name: 'GE Aerospace', sentiment: 55, change: 1.3 },
-      ],
-      topics: ['Manufacturing Data', 'Infrastructure', 'Global Trade', 'Defense Spending'],
-    },
-    {
-      id: 'telecom', name: 'Telecom', sentiment: 50, discussionVolume: 12000,
-      companies: [
-        { symbol: 'T', name: 'AT&T', sentiment: 48, change: 0.1 },
-        { symbol: 'VZ', name: 'Verizon', sentiment: 51, change: 0.3 },
-        { symbol: 'TMUS', name: 'T-Mobile', sentiment: 53, change: 0.5 },
-      ],
-      topics: ['5G Rollout', 'Subscriber Growth', 'Spectrum Auctions', 'Fiber Expansion'],
-    },
   ];
 
   readonly forecastStats: ForecastStats = {

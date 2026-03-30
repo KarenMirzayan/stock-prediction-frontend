@@ -83,20 +83,25 @@ export interface CalendarEvent extends EventItem {
   type: EventType;
 }
 
-export interface HeatmapCompany {
-  symbol: string;
-  name: string;
-  sentiment: number;
-  change: number;
+export interface RedditBuzz {
+  rank: number;
+  mentions: number;
+  upvotes: number;
+  rank24hAgo: number | null;
+  mentions24hAgo: number | null;
+  rankChange: number;
+  mentionChange: number;
 }
 
-export interface HeatmapSector {
-  id: string;
-  name: string;
-  sentiment: number;
-  discussionVolume: number;
-  companies: HeatmapCompany[];
-  topics: string[];
+export interface CompanySentiment {
+  score: number;
+  state: MarketState;
+  description: string;
+  totalPredictions: number;
+  bullishCount: number;
+  bearishCount: number;
+  neutralCount: number;
+  redditBuzz: RedditBuzz | null;
 }
 
 export interface Company {

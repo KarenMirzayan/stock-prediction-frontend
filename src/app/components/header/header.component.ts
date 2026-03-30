@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, LayoutGrid, User, Menu, X, Home, Building2, LogOut, UserPlus } from 'lucide-angular';
+import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, User, Menu, X, Home, Building2, LogOut, UserPlus } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -129,7 +129,6 @@ export class HeaderComponent {
     { name: 'Forecast Analytics', href: '/forecast', icon: TrendingUp },
     { name: 'Education', href: '/education', icon: GraduationCap },
     { name: 'Calendar', href: '/calendar', icon: Calendar },
-    { name: 'Heatmap', href: '/heatmap', icon: LayoutGrid },
   ];
 
   userInitials(): string {

@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Company, CompanyDetail } from '../models';
+import { Company, CompanyDetail, CompanySentiment } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class CompanyApiService {
@@ -19,6 +19,10 @@ export class CompanyApiService {
     return this.http.get<CompanyDetail>(`${this.baseUrl}/${ticker}`).pipe(
       map(c => ({ ...c, logoUrl: this.proxyLogo(c.logoUrl, 128) }))
     );
+  }
+
+  getSentiment(ticker: string): Observable<CompanySentiment> {
+    return this.http.get<CompanySentiment>(`${this.baseUrl}/${ticker}/sentiment`);
   }
 
   private proxyLogo(url: string | undefined, size: number): string | undefined {
