@@ -51,6 +51,17 @@ export interface NewsPage {
   totalPages: number;
 }
 
+export interface MarketSentiment {
+  score: number;
+  state: MarketState;
+  description: string;
+  factors: string[];
+  totalPredictions: number;
+  bullishCount: number;
+  bearishCount: number;
+  neutralCount: number;
+}
+
 export interface SectorData {
   name: string;
   marketCap: number;

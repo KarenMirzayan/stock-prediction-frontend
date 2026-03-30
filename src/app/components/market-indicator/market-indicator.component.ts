@@ -7,7 +7,7 @@ import { MarketState } from '../../models';
   imports: [LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="relative overflow-hidden rounded-xl border p-6"
+    <div class="relative rounded-xl border p-6"
          [class]="stateConfig[state()].colorClass">
       <div class="flex items-start justify-between gap-4">
         <div class="flex items-center gap-4">

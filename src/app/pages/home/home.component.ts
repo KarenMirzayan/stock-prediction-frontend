@@ -10,8 +10,9 @@ import { MockDataService } from '../../services/mock-data.service';
 import { NewsApiService } from '../../services/news-api.service';
 import { CalendarApiService } from '../../services/calendar-api.service';
 import { SectorApiService } from '../../services/sector-api.service';
+import { MarketSentimentService } from '../../services/market-sentiment.service';
 import { AuthService } from '../../services/auth.service';
-import { NewsItem, EventItem, SectorData } from '../../models';
+import { NewsItem, EventItem, SectorData, MarketSentiment } from '../../models';
 
 @Component({
   selector: 'app-home',
@@ -25,12 +26,12 @@ import { NewsItem, EventItem, SectorData } from '../../models';
         <div class="grid gap-6 lg:grid-cols-3">
           <div class="lg:col-span-2">
             <app-market-indicator
-              state="bullish"
-              description="Markets showing moderate growth with positive momentum"
-              [factors]="['Strong corporate earnings reports', 'Declining inflation pressures', 'Positive employment data', 'Central bank policy signals']" />
+              [state]="sentiment().state"
+              [description]="sentiment().description"
+              [factors]="sentiment().factors" />
           </div>
           <div>
-            <app-sentiment-gauge [value]="35" />
+            <app-sentiment-gauge [value]="sentiment().score" />
           </div>
         </div>
 
@@ -96,6 +97,7 @@ export class HomeComponent implements OnInit {
   private readonly newsApi = inject(NewsApiService);
   private readonly calendarApi = inject(CalendarApiService);
   private readonly sectorApi = inject(SectorApiService);
+  private readonly sentimentApi = inject(MarketSentimentService);
   private readonly router = inject(Router);
   readonly mockData = inject(MockDataService);
   readonly auth = inject(AuthService);
@@ -106,6 +108,10 @@ export class HomeComponent implements OnInit {
   readonly homeEvents = signal<EventItem[]>([]);
   readonly sectors = signal<SectorData[]>([]);
   readonly loading = signal(true);
+  readonly sentiment = signal<MarketSentiment>({
+    score: 0, state: 'stagnation', description: 'Loading market data...',
+    factors: [], totalPredictions: 0, bullishCount: 0, bearishCount: 0, neutralCount: 0,
+  });
 
   constructor() {
     effect(() => {
@@ -142,6 +148,11 @@ export class HomeComponent implements OnInit {
     this.sectorApi.getHeatmap().subscribe({
       next: (sectors) => this.sectors.set(sectors.length ? sectors : this.mockData.homeSectors),
       error: () => this.sectors.set(this.mockData.homeSectors),
+    });
+
+    this.sentimentApi.getSentiment().subscribe({
+      next: (data) => this.sentiment.set(data),
+      error: () => {},
     });
   }
 
