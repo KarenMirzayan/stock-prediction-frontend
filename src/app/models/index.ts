@@ -206,7 +206,7 @@ export interface SubscribedSector {
 }
 
 export interface ForecastHistoryItem {
-  id: string;
+  id: number;
   date: string;
   headline: string;
   forecast: Forecast;
@@ -221,6 +221,9 @@ export interface ForecastStats {
   growthForecasts: number;
   declineForecasts: number;
   stagnationForecasts: number;
+  growthAccuracy?: number;
+  declineAccuracy?: number;
+  stagnationAccuracy?: number;
 }
 
 // Auth models
