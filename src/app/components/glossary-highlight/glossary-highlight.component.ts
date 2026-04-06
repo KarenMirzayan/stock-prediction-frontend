@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, ViewEncapsulation, input, computed, signal } from '@angular/core';
 import { GlossaryTerm } from '../../models';
+import pluralize from 'pluralize';
 
 interface TextSegment {
   text: string;
@@ -139,8 +140,9 @@ export class GlossaryHighlightComponent {
   });
 
   /**
-   * Returns all lowercase surface forms for a glossary term, covering common
-   * English inflections: plurals, verb conjugations, and comparatives.
+   * Returns all lowercase surface forms for a glossary term (singular + plural),
+   * delegating irregular and edge-case forms to the `pluralize` library.
+   * Multi-word terms inflect only the last word.
    */
   private static inflect(term: string): string[] {
     const base = term.toLowerCase();
@@ -150,65 +152,11 @@ export class GlossaryHighlightComponent {
     const last = words[words.length - 1];
     const prefix = words.length > 1 ? words.slice(0, -1).join(' ') + ' ' : '';
 
-    const add = (suffix: string) => forms.add(prefix + suffix);
+    const singular = pluralize.singular(last);
+    const plural   = pluralize.plural(last);
 
-    // Determine the stem for the last word
-    if (last.length < 3) return [...forms]; // too short to inflect safely
-
-    if (last.endsWith('sis')) {
-      // analysis → analyses
-      add(last.slice(0, -2) + 'es');
-    } else if (last.endsWith('um')) {
-      // datum → data
-      add(last.slice(0, -2) + 'a');
-    } else if (last.endsWith('on') && last.length > 4) {
-      // criterion → criteria
-      add(last.slice(0, -2) + 'a');
-    } else if (last.endsWith('fe')) {
-      // knife → knives
-      add(last.slice(0, -2) + 'ves');
-    } else if (last.endsWith('f') && !last.endsWith('ff')) {
-      // leaf → leaves
-      add(last.slice(0, -1) + 'ves');
-    } else if (last.endsWith('ey') || last.endsWith('ay') || last.endsWith('oy') || last.endsWith('uy')) {
-      // key → keys, play → plays
-      add(last + 's');
-    } else if (last.endsWith('y')) {
-      // volatility → volatilities; carry → carries / carrying / carried / carrier
-      const stem = last.slice(0, -1);
-      add(stem + 'ies');     // plural / 3rd-person singular
-      add(stem + 'ied');     // past tense / past participle
-      add(stem + 'ying');    // present participle
-      add(stem + 'ier');     // comparative / agent noun
-      add(stem + 'iest');    // superlative
-    } else if (/[sxz]$/.test(last) || /[cs]h$/.test(last)) {
-      // tax → taxes, watch → watches
-      add(last + 'es');
-      add(last + 'ed');
-      add(last + 'ing');
-    } else if (last.endsWith('ie')) {
-      // die → dies / dying
-      add(last + 's');
-      add(last.slice(0, -2) + 'ying');
-    } else if (last.endsWith('e')) {
-      // trade → trades / traded / trading / trader
-      add(last + 's');
-      add(last + 'd');                  // past tense
-      add(last.slice(0, -1) + 'ing');  // drop e before -ing
-      add(last + 'r');                  // agent noun (trader)
-    } else {
-      // Regular: dividend → dividends / invested / investing / investor
-      add(last + 's');
-      const endsInDoubleConsonant = /([^aeiou])\1$/.test(last);
-      const endsInShortVowelConsonant = /[aeiou][^aeiouywh]$/.test(last) && last.length <= 6;
-      const doubledStem = (endsInDoubleConsonant || endsInShortVowelConsonant)
-        ? last + last[last.length - 1]
-        : last;
-      add(doubledStem + 'ed');
-      add(doubledStem + 'ing');
-      add(doubledStem + 'er');
-      add(last + 'est');
-    }
+    forms.add(prefix + singular);
+    forms.add(prefix + plural);
 
     return [...forms];
   }
