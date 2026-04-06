@@ -42,7 +42,7 @@ interface TextSegment {
     .glossary-term-highlight {
       text-decoration: underline;
       text-decoration-style: dotted;
-      text-decoration-color: hsl(var(--accent));
+      text-decoration-color: var(--accent);
       text-underline-offset: 3px;
       cursor: help;
       transition: background-color 0.15s;
@@ -57,12 +57,12 @@ interface TextSegment {
       max-width: 320px;
       padding: 12px 14px;
       border-radius: 10px;
-      border: 1px solid hsl(var(--border));
-      background-color: hsl(var(--card));
-      color: hsl(var(--foreground));
+      border: 1px solid var(--border);
+      background-color: var(--card);
+      color: var(--foreground);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
       pointer-events: none;
-      animation: tooltip-in 0.15s ease-out;
+      animation: tooltip-in 0.12s ease-out;
       isolation: isolate;
       backdrop-filter: none;
       transform: translateY(-100%);
@@ -77,17 +77,17 @@ interface TextSegment {
     }
     .glossary-tooltip-category {
       font-size: 0.6875rem;
-      color: hsl(var(--muted-foreground));
+      color: var(--muted-foreground);
       margin-bottom: 6px;
     }
     .glossary-tooltip-def {
       font-size: 0.8125rem;
       line-height: 1.45;
-      color: hsl(var(--muted-foreground));
+      color: var(--muted-foreground);
     }
     @keyframes tooltip-in {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; }
+      to   { opacity: 1; }
     }
   `]
 })
@@ -104,16 +104,19 @@ export class GlossaryHighlightComponent {
     const terms = this.terms();
     if (!text || terms.length === 0) return [{ text, term: null }];
 
-    // Build regex matching all terms (longest first to avoid partial matches)
-    const sorted = [...terms].sort((a, b) => b.term.length - a.term.length);
-    const escaped = sorted.map(t => t.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const pattern = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+    // Build a map: every surface form (including inflections) → canonical GlossaryTerm
+    const formMap = new Map<string, GlossaryTerm>();
 
-    // Build a map for quick lookup (lowercase key)
-    const termMap = new Map<string, GlossaryTerm>();
     for (const t of terms) {
-      termMap.set(t.term.toLowerCase(), t);
+      for (const form of GlossaryHighlightComponent.inflect(t.term)) {
+        if (!formMap.has(form)) formMap.set(form, t);
+      }
     }
+
+    // Sort surface forms longest-first to prevent shorter forms shadowing longer ones
+    const allForms = [...formMap.keys()].sort((a, b) => b.length - a.length);
+    const escaped = allForms.map(f => f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const pattern = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
 
     const segments: TextSegment[] = [];
     let lastIndex = 0;
@@ -123,8 +126,8 @@ export class GlossaryHighlightComponent {
       if (match.index > lastIndex) {
         segments.push({ text: text.slice(lastIndex, match.index), term: null });
       }
-      const matched = termMap.get(match[1].toLowerCase()) ?? null;
-      segments.push({ text: match[0], term: matched });
+      const term = formMap.get(match[1].toLowerCase()) ?? null;
+      segments.push({ text: match[0], term });
       lastIndex = pattern.lastIndex;
     }
 
@@ -134,6 +137,81 @@ export class GlossaryHighlightComponent {
 
     return segments;
   });
+
+  /**
+   * Returns all lowercase surface forms for a glossary term, covering common
+   * English inflections: plurals, verb conjugations, and comparatives.
+   */
+  private static inflect(term: string): string[] {
+    const base = term.toLowerCase();
+    const forms = new Set<string>([base]);
+
+    const words = base.split(/\s+/);
+    const last = words[words.length - 1];
+    const prefix = words.length > 1 ? words.slice(0, -1).join(' ') + ' ' : '';
+
+    const add = (suffix: string) => forms.add(prefix + suffix);
+
+    // Determine the stem for the last word
+    if (last.length < 3) return [...forms]; // too short to inflect safely
+
+    if (last.endsWith('sis')) {
+      // analysis → analyses
+      add(last.slice(0, -2) + 'es');
+    } else if (last.endsWith('um')) {
+      // datum → data
+      add(last.slice(0, -2) + 'a');
+    } else if (last.endsWith('on') && last.length > 4) {
+      // criterion → criteria
+      add(last.slice(0, -2) + 'a');
+    } else if (last.endsWith('fe')) {
+      // knife → knives
+      add(last.slice(0, -2) + 'ves');
+    } else if (last.endsWith('f') && !last.endsWith('ff')) {
+      // leaf → leaves
+      add(last.slice(0, -1) + 'ves');
+    } else if (last.endsWith('ey') || last.endsWith('ay') || last.endsWith('oy') || last.endsWith('uy')) {
+      // key → keys, play → plays
+      add(last + 's');
+    } else if (last.endsWith('y')) {
+      // volatility → volatilities; carry → carries / carrying / carried / carrier
+      const stem = last.slice(0, -1);
+      add(stem + 'ies');     // plural / 3rd-person singular
+      add(stem + 'ied');     // past tense / past participle
+      add(stem + 'ying');    // present participle
+      add(stem + 'ier');     // comparative / agent noun
+      add(stem + 'iest');    // superlative
+    } else if (/[sxz]$/.test(last) || /[cs]h$/.test(last)) {
+      // tax → taxes, watch → watches
+      add(last + 'es');
+      add(last + 'ed');
+      add(last + 'ing');
+    } else if (last.endsWith('ie')) {
+      // die → dies / dying
+      add(last + 's');
+      add(last.slice(0, -2) + 'ying');
+    } else if (last.endsWith('e')) {
+      // trade → trades / traded / trading / trader
+      add(last + 's');
+      add(last + 'd');                  // past tense
+      add(last.slice(0, -1) + 'ing');  // drop e before -ing
+      add(last + 'r');                  // agent noun (trader)
+    } else {
+      // Regular: dividend → dividends / invested / investing / investor
+      add(last + 's');
+      const endsInDoubleConsonant = /([^aeiou])\1$/.test(last);
+      const endsInShortVowelConsonant = /[aeiou][^aeiouywh]$/.test(last) && last.length <= 6;
+      const doubledStem = (endsInDoubleConsonant || endsInShortVowelConsonant)
+        ? last + last[last.length - 1]
+        : last;
+      add(doubledStem + 'ed');
+      add(doubledStem + 'ing');
+      add(doubledStem + 'er');
+      add(last + 'est');
+    }
+
+    return [...forms];
+  }
 
   readonly tooltipBelow = signal(false);
 
