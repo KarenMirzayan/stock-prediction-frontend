@@ -11,7 +11,7 @@ import { NewsApiService } from '../../services/news-api.service';
 import { AdminApiService } from '../../services/admin-api.service';
 import { AuthService } from '../../services/auth.service';
 import { EducationApiService } from '../../services/education-api.service';
-import { LucideAngularModule, ArrowLeft, TrendingUp, TrendingDown, Minus, Shuffle, Zap, Share2, Globe, Pencil, Trash2, Check, X } from 'lucide-angular';
+import { LucideAngularModule, ArrowLeft, TrendingUp, TrendingDown, Minus, Shuffle, Zap, Globe, Pencil, Trash2, Check, X } from 'lucide-angular';
 import { Direction, GlossaryTerm, NewsDetail, PredictionDetail } from '../../models';
 
 @Component({
@@ -108,10 +108,6 @@ import { Direction, GlossaryTerm, NewsDetail, PredictionDetail } from '../../mod
                 <div class="rounded-full border px-3 py-1.5" [class]="getSentimentClass()">
                   <span class="text-sm font-medium capitalize">{{ news()!.sentiment }}</span>
                 </div>
-                <button class="inline-flex items-center gap-1.5 rounded-md border border-border bg-transparent px-3 py-1.5 text-sm transition-colors hover:bg-secondary">
-                  <lucide-icon [img]="Share2" [size]="14"></lucide-icon>
-                  Share
-                </button>
                 @if (isAdmin()) {
                   <button (click)="confirmDeleteArticle()"
                           class="inline-flex items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-sm text-destructive transition-colors hover:bg-destructive/20">
@@ -320,7 +316,6 @@ export class NewsDetailComponent implements OnInit {
   private readonly mockData = inject(MockDataService);
 
   readonly ArrowLeft = ArrowLeft;
-  readonly Share2 = Share2;
   readonly Globe = Globe;
   readonly Pencil = Pencil;
   readonly Trash2 = Trash2;
