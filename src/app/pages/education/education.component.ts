@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of } from 'rxjs';
+import { catchError, of, take } from 'rxjs';
 import { HeaderComponent } from '../../components/header/header.component';
 import { MockDataService } from '../../services/mock-data.service';
 import { EducationApiService } from '../../services/education-api.service';
@@ -941,10 +941,12 @@ export class EducationComponent {
   editQuestionForm = { question: '', options: [] as string[], correctAnswer: 0, explanation: '' };
 
   // API-backed signals
-  readonly glossaryTerms = toSignal(
-    this.educationApi.getGlossaryTerms().pipe(catchError(() => of([] as GlossaryTerm[]))),
-    { initialValue: [] as GlossaryTerm[] }
-  );
+  readonly glossaryTerms = signal<GlossaryTerm[]>([]);
+
+  constructor() {
+    this.educationApi.getGlossaryTerms().pipe(take(1), catchError(() => of([] as GlossaryTerm[])))
+      .subscribe(terms => this.glossaryTerms.set(terms));
+  }
 
   readonly quizzes = toSignal(
     this.educationApi.getQuizzes().pipe(catchError(() => of([] as Quiz[]))),
@@ -1180,9 +1182,9 @@ export class EducationComponent {
     if (!confirm(`Delete glossary term "${item.term}"?`)) return;
     this.adminApi.deleteGlossaryTerm(item.id).subscribe({
       next: () => {
-        // Remove from the local signal by reloading
-        window.location.reload();
+        this.glossaryTerms.update(terms => terms.filter(t => t.id !== item.id));
       },
+      error: () => alert(`Failed to delete "${item.term}". Please try again.`),
     });
   }
 
@@ -1241,11 +1243,11 @@ export class EducationComponent {
       definition: definition.trim() || undefined,
       category: category.trim(),
     }).subscribe({
-      next: () => {
+      next: (created) => {
+        this.glossaryTerms.update(terms => [...terms, created]);
         this.newTermForm = { term: '', definition: '', category: '' };
         this.showAddTerm.set(false);
         this.creatingTerm.set(false);
-        window.location.reload();
       },
       error: () => this.creatingTerm.set(false),
     });
