@@ -207,6 +207,7 @@ export interface SubscribedSector {
 
 export interface ForecastHistoryItem {
   id: number;
+  articleId: number | null;
   date: string;
   headline: string;
   forecast: Forecast;

@@ -1,9 +1,11 @@
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, computed, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { HeaderComponent } from '../../components/header/header.component';
 import { ForecastApiService } from '../../services/forecast-api.service';
 import { LucideAngularModule, TrendingUp, TrendingDown, CheckCircle2, XCircle, Target, BarChart3, PieChart, Loader2 } from 'lucide-angular';
 import { Forecast, ForecastStats } from '../../models';
+import { tap } from 'rxjs';
 
 const DEFAULT_STATS: ForecastStats = {
   accuracy: 0,
@@ -15,7 +17,7 @@ const DEFAULT_STATS: ForecastStats = {
 
 @Component({
   selector: 'app-forecast',
-  imports: [HeaderComponent, LucideAngularModule],
+  imports: [HeaderComponent, LucideAngularModule, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="min-h-screen bg-background">
@@ -27,7 +29,70 @@ const DEFAULT_STATS: ForecastStats = {
           <p class="mt-1 text-muted-foreground">Transparency and analytical reliability of the system</p>
         </div>
 
-        @if (stats().totalForecasts === 0) {
+        @if (loading()) {
+          <!-- Skeleton: Stats Cards -->
+          <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            @for (i of [1, 2, 3, 4]; track i) {
+              <div class="animate-pulse rounded-xl border border-border bg-card p-6">
+                <div class="flex items-center justify-between pb-2">
+                  <div class="h-4 w-24 rounded bg-secondary"></div>
+                  <div class="h-4 w-4 rounded bg-secondary"></div>
+                </div>
+                <div class="mt-2 h-8 w-16 rounded bg-secondary"></div>
+                <div class="mt-2 h-3 w-32 rounded bg-secondary"></div>
+              </div>
+            }
+          </div>
+
+          <!-- Skeleton: Table -->
+          <div class="grid gap-6 lg:grid-cols-3">
+            <div class="lg:col-span-2">
+              <div class="animate-pulse rounded-xl border border-border bg-card">
+                <div class="flex items-center gap-2 border-b border-border p-6">
+                  <div class="h-5 w-5 rounded bg-secondary"></div>
+                  <div class="h-5 w-40 rounded bg-secondary"></div>
+                </div>
+                <div class="space-y-4 p-6">
+                  @for (i of [1, 2, 3, 4, 5]; track i) {
+                    <div class="flex items-center gap-4 border-b border-border pb-4 last:border-0">
+                      <div class="h-4 w-20 rounded bg-secondary"></div>
+                      <div class="flex-1 space-y-2">
+                        <div class="h-4 w-3/4 rounded bg-secondary"></div>
+                        <div class="flex gap-1">
+                          <div class="h-5 w-14 rounded-md bg-secondary"></div>
+                          <div class="h-5 w-14 rounded-md bg-secondary"></div>
+                        </div>
+                      </div>
+                      <div class="h-5 w-16 rounded-full bg-secondary"></div>
+                      <div class="h-4 w-12 rounded bg-secondary"></div>
+                      <div class="h-5 w-5 rounded-full bg-secondary"></div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="animate-pulse rounded-xl border border-border bg-card">
+                <div class="flex items-center gap-2 border-b border-border p-6">
+                  <div class="h-5 w-5 rounded bg-secondary"></div>
+                  <div class="h-5 w-28 rounded bg-secondary"></div>
+                </div>
+                <div class="space-y-4 p-6">
+                  @for (i of [1, 2, 3]; track i) {
+                    <div>
+                      <div class="mb-2 flex items-center justify-between">
+                        <div class="h-4 w-20 rounded bg-secondary"></div>
+                        <div class="h-4 w-10 rounded bg-secondary"></div>
+                      </div>
+                      <div class="h-2 rounded-full bg-secondary"></div>
+                    </div>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        } @else if (stats().totalForecasts === 0) {
           <div class="flex flex-col items-center justify-center rounded-xl border border-border bg-card p-12 text-center">
             <lucide-icon [img]="BarChart3" [size]="48" class="mb-4 text-muted-foreground/50"></lucide-icon>
             <h3 class="text-lg font-semibold">No verified predictions yet</h3>
@@ -85,7 +150,14 @@ const DEFAULT_STATS: ForecastStats = {
                   <h3 class="text-lg font-semibold">Forecast History</h3>
                 </div>
                 <div class="overflow-x-auto p-6">
-                  <table class="w-full">
+                  <table class="w-full table-fixed">
+                    <colgroup>
+                      <col class="w-[10%]" />
+                      <col class="w-[52%]" />
+                      <col class="w-[14%]" />
+                      <col class="w-[14%]" />
+                      <col class="w-[10%]" />
+                    </colgroup>
                     <thead>
                       <tr class="border-b border-border text-left text-sm text-muted-foreground">
                         <th class="pb-3 font-medium">Date</th>
@@ -96,14 +168,43 @@ const DEFAULT_STATS: ForecastStats = {
                       </tr>
                     </thead>
                     <tbody>
+                      @if (historyLoading()) {
+                        @for (i of [1, 2, 3, 4, 5]; track i) {
+                          <tr class="border-b border-border last:border-0">
+                            <td class="py-3"><div class="h-4 w-16 animate-pulse rounded bg-secondary"></div></td>
+                            <td class="py-3">
+                              <div class="h-4 w-3/4 animate-pulse rounded bg-secondary"></div>
+                              <div class="mt-2 flex gap-1">
+                                <div class="h-5 w-14 animate-pulse rounded-md bg-secondary"></div>
+                                <div class="h-5 w-14 animate-pulse rounded-md bg-secondary"></div>
+                              </div>
+                            </td>
+                            <td class="py-3"><div class="h-5 w-16 animate-pulse rounded-full bg-secondary"></div></td>
+                            <td class="py-3"><div class="h-4 w-12 animate-pulse rounded bg-secondary"></div></td>
+                            <td class="py-3"><div class="h-5 w-5 animate-pulse rounded-full bg-secondary"></div></td>
+                          </tr>
+                        }
+                      } @else {
                       @for (item of history(); track item.id) {
-                        <tr class="border-b border-border last:border-0">
+                        <tr class="border-b border-border transition-colors hover:bg-secondary/50 last:border-0">
                           <td class="py-3 text-sm text-muted-foreground">{{ item.date }}</td>
                           <td class="py-3">
-                            <p class="text-sm font-medium" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 250px;">{{ item.headline }}</p>
-                            <div class="mt-1 flex gap-1">
+                            @if (item.articleId) {
+                              <a [routerLink]="['/news', item.articleId]"
+                                 class="block truncate text-sm font-medium transition-colors hover:text-accent">
+                                {{ item.headline }}
+                              </a>
+                            } @else {
+                              <p class="truncate text-sm font-medium">{{ item.headline }}</p>
+                            }
+                            <div class="mt-1 flex flex-wrap gap-1">
                               @for (c of item.companies; track c) {
-                                <span class="rounded-md bg-secondary px-1.5 py-0.5 text-xs">{{ c }}</span>
+                                <span class="inline-flex cursor-default items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium transition-all hover:brightness-125"
+                                      [class]="getTickerClass(item.forecast)">
+                                  {{ c }}
+                                  <lucide-icon [img]="getForecastIcon(item.forecast)" [size]="12"
+                                               [class]="getForecastIconRotation(item.forecast)"></lucide-icon>
+                                </span>
                               }
                             </div>
                           </td>
@@ -129,6 +230,7 @@ const DEFAULT_STATS: ForecastStats = {
                             }
                           </td>
                         </tr>
+                      }
                       }
                     </tbody>
                   </table>
@@ -211,8 +313,10 @@ const DEFAULT_STATS: ForecastStats = {
 export class ForecastComponent {
   private readonly forecastApi = inject(ForecastApiService);
 
-  readonly stats = toSignal(this.forecastApi.getStats(), { initialValue: DEFAULT_STATS });
-  readonly history = toSignal(this.forecastApi.getHistory(), { initialValue: [] });
+  readonly loading = signal(true);
+  readonly historyLoading = signal(true);
+  readonly stats = toSignal(this.forecastApi.getStats().pipe(tap(() => this.loading.set(false))), { initialValue: DEFAULT_STATS });
+  readonly history = toSignal(this.forecastApi.getHistory().pipe(tap(() => this.historyLoading.set(false))), { initialValue: [] });
 
   readonly TrendingUp = TrendingUp;
   readonly TrendingDown = TrendingDown;
@@ -253,6 +357,15 @@ export class ForecastComponent {
       growth: 'bg-accent/10 text-accent',
       decline: 'bg-destructive/10 text-destructive',
       stagnation: 'bg-warning/10 text-warning',
+    };
+    return map[forecast];
+  }
+
+  getTickerClass(forecast: Forecast): string {
+    const map: Record<Forecast, string> = {
+      growth: 'border-accent/40 bg-accent/10 text-accent',
+      decline: 'border-destructive/40 bg-destructive/10 text-destructive',
+      stagnation: 'border-warning/40 bg-warning/10 text-warning',
     };
     return map[forecast];
   }

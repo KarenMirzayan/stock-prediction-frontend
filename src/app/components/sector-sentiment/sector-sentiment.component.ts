@@ -85,16 +85,15 @@ export class SectorSentimentComponent {
     if (totalCap === 0) return [];
 
     const containerArea = 100 * 100;
-    const minPct = 5; // minimum 5% area so small sectors stay visible
 
-    let items: TreeItem[] = sectors.map(s => ({
+    // Square root scale: dampens extreme size differences while keeping meaningful proportions
+    const sqrtAreas = sectors.map(s => Math.sqrt(s.marketCap));
+    const sqrtTotal = sqrtAreas.reduce((sum, v) => sum + v, 0);
+
+    let items: TreeItem[] = sectors.map((s, i) => ({
       sector: s,
-      area: Math.max((s.marketCap / totalCap) * containerArea, (minPct / 100) * containerArea),
+      area: (sqrtAreas[i] / sqrtTotal) * containerArea,
     }));
-
-    // Re-normalize so areas sum to container area
-    const clampedTotal = items.reduce((sum, i) => sum + i.area, 0);
-    items = items.map(i => ({ ...i, area: (i.area / clampedTotal) * containerArea }));
 
     const tiles: Tile[] = [];
     this.squarify(items, [], { x: 0, y: 0, w: 100, h: 100 }, tiles);

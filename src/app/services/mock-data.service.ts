@@ -231,12 +231,12 @@ The move is expected to have broad implications across multiple sectors, particu
   };
 
   readonly forecastHistory: ForecastHistoryItem[] = [
-    { id: 1, date: 'Feb 3, 2026', headline: 'Tech earnings expected to beat estimates', forecast: 'growth', actualMovement: '+3.2%', accurate: true, companies: ['AAPL', 'MSFT'] },
-    { id: 2, date: 'Feb 2, 2026', headline: 'Oil prices to stabilize after OPEC meeting', forecast: 'stagnation', actualMovement: '+0.8%', accurate: true, companies: ['XOM', 'CVX'] },
-    { id: 3, date: 'Feb 1, 2026', headline: 'Retail sector faces headwinds from weak consumer data', forecast: 'decline', actualMovement: '-2.1%', accurate: true, companies: ['WMT', 'TGT'] },
-    { id: 4, date: 'Jan 31, 2026', headline: 'Banking stocks to rise on interest rate expectations', forecast: 'growth', actualMovement: '-0.5%', accurate: false, companies: ['JPM', 'BAC'] },
-    { id: 5, date: 'Jan 30, 2026', headline: 'Semiconductor demand outlook remains strong', forecast: 'growth', actualMovement: '+4.7%', accurate: true, companies: ['NVDA', 'AMD'] },
-    { id: 6, date: 'Jan 29, 2026', headline: 'Healthcare sector mixed on policy uncertainty', forecast: 'stagnation', actualMovement: '-1.8%', accurate: false, companies: ['JNJ', 'PFE'] },
+    { id: 1, articleId: 1, date: 'Feb 3, 2026', headline: 'Tech earnings expected to beat estimates', forecast: 'growth', actualMovement: '+3.2%', accurate: true, companies: ['AAPL', 'MSFT'] },
+    { id: 2, articleId: 2, date: 'Feb 2, 2026', headline: 'Oil prices to stabilize after OPEC meeting', forecast: 'stagnation', actualMovement: '+0.8%', accurate: true, companies: ['XOM', 'CVX'] },
+    { id: 3, articleId: 3, date: 'Feb 1, 2026', headline: 'Retail sector faces headwinds from weak consumer data', forecast: 'decline', actualMovement: '-2.1%', accurate: true, companies: ['WMT', 'TGT'] },
+    { id: 4, articleId: 4, date: 'Jan 31, 2026', headline: 'Banking stocks to rise on interest rate expectations', forecast: 'growth', actualMovement: '-0.5%', accurate: false, companies: ['JPM', 'BAC'] },
+    { id: 5, articleId: 5, date: 'Jan 30, 2026', headline: 'Semiconductor demand outlook remains strong', forecast: 'growth', actualMovement: '+4.7%', accurate: true, companies: ['NVDA', 'AMD'] },
+    { id: 6, articleId: 6, date: 'Jan 29, 2026', headline: 'Healthcare sector mixed on policy uncertainty', forecast: 'stagnation', actualMovement: '-1.8%', accurate: false, companies: ['JNJ', 'PFE'] },
   ];
 
   readonly glossaryTerms: GlossaryTerm[] = [
