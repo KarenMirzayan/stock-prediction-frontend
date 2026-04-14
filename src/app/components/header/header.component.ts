@@ -1,7 +1,8 @@
 import { Component, ChangeDetectionStrategy, signal, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, User, Menu, X, Home, Building2, LogOut, UserPlus } from 'lucide-angular';
+import { LucideAngularModule, TrendingUp, Newspaper, GraduationCap, Calendar, User, Menu, X, Home, Building2, LogOut, UserPlus, Sun, Moon } from 'lucide-angular';
 import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-header',
@@ -32,6 +33,15 @@ import { AuthService } from '../../services/auth.service';
         </div>
 
         <div class="flex items-center gap-3">
+          <button (click)="theme.toggle()"
+                  class="rounded-md p-2 transition-colors hover:bg-secondary"
+                  [attr.aria-label]="theme.theme() === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'">
+            @if (theme.theme() === 'dark') {
+              <lucide-icon [img]="Sun" [size]="18"></lucide-icon>
+            } @else {
+              <lucide-icon [img]="Moon" [size]="18"></lucide-icon>
+            }
+          </button>
           @if (auth.isLoggedIn()) {
             <div class="relative">
               <button (click)="userMenuOpen.set(!userMenuOpen())"
@@ -111,6 +121,7 @@ import { AuthService } from '../../services/auth.service';
 })
 export class HeaderComponent {
   readonly auth = inject(AuthService);
+  readonly theme = inject(ThemeService);
 
   readonly mobileMenuOpen = signal(false);
   readonly userMenuOpen = signal(false);
@@ -121,6 +132,8 @@ export class HeaderComponent {
   readonly X = X;
   readonly LogOut = LogOut;
   readonly UserPlus = UserPlus;
+  readonly Sun = Sun;
+  readonly Moon = Moon;
 
   readonly navigation = [
     { name: 'Home', href: '/', icon: Home },

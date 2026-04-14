@@ -29,7 +29,7 @@ interface TreeItem {
   template: `
     <div class="rounded-xl border border-border bg-card p-5">
       <div class="mb-4 flex items-center justify-between">
-        <h3 class="font-semibold">Sector Sentiment</h3>
+        <h3 class="font-semibold">Sector Breakdown</h3>
         <div class="flex items-center gap-3 text-xs text-muted-foreground">
           <span class="flex items-center gap-1.5">
             <span class="h-2.5 w-2.5 rounded-sm bg-accent"></span>
